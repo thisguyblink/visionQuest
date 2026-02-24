@@ -7,26 +7,27 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct SplashScreen: View {
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 20) {
-                Text("This is the Home Page!")
-
-                NavigationLink(destination: Depth_Map()) {
-                    Text("Depth Map Page")
-                }
-                NavigationLink(destination: Object_Detection()) {
-                    Text("Object Detection Page")
-                }
-                NavigationLink(destination: Directions()) {
-                    Text("Direction Page")
-                }
-            }
+        VStack(spacing: 20) {
+            Text("This is the Home Page!")
         }
     }
 }
 
-#Preview {
-    ContentView()
+struct HomePage: View {
+    var body: some View {
+        TabView {
+            SplashScreen()
+            Depth_Map()
+            Object_Detection()
+            Directions()
+        }.tabViewStyle(.page(indexDisplayMode: .automatic))
+    }
+}
+
+struct HomePagePreview: PreviewProvider {
+    static var previews: some View {
+        HomePage()
+    }
 }
