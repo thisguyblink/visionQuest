@@ -1,15 +1,22 @@
-//
-//  Depth Map.swift
-//  Vision Quest
-//
-//  Created by Patrick Smith on 2/12/26.
-//
-
 import SwiftUI
 
 struct Depth_Map: View {
+    
+    @StateObject private var camera = DepthCameraManager()
+    
     var body: some View {
-        Text("This is the Depth Map page")
+        VStack(spacing: 20) {
+            
+            if camera.depthAvailable {
+                Text("LiDAR Available ✅")
+            } else {
+                Text("LiDAR Not Available ❌")
+            }
+            Button("Capture Depth Photo") {
+                camera.capturePhoto()
+            }
+        }
+        .padding()
     }
 }
 
