@@ -6,5 +6,18 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+
+	<!-- Speech Recognition Perms -->
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app uses speech recognition to allow you to give voice commands.</string>
+
+	<!-- Location Perms -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app uses your location to provide navigation directions.</string>
+
+	<!-- Microphone Perms -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app uses the microphone to allow you to give voice commands.</string>
+	
 </dict>
 </plist>
