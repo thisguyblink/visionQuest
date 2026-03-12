@@ -6,30 +6,30 @@
 //
 
 import SwiftUI
-import AVFoundation
 
 // FIXME: Add text-to-speech once merged with Tyler's branch
-struct LandingPage: View {
+struct HomePage: View {
     // let speech = SpeechFuncts()
     var body: some View {
         VStack(spacing: 20) {
             // let welcome_message = "Welcome to Vision Quest ..."
-            // speech.speak()
+            // speech.speak(welcome_message)
             Text("This is the Home Page!")
+            
         }
     }
 }
 
-//struct SplashScreen: View {
-//    var body: some View {
-//        TabView {
-//            LandingPage()
-//            Depth_Map()
-//            Object_Detection()
-//            Directions()
-//        }.tabViewStyle(.page(indexDisplayMode: .automatic))
-//    }
-//}
+struct PageManager: View {
+    var body: some View {
+        TabView {
+            HomePage()
+            Depth_Map()
+            Object_Detection()
+            Directions()
+        }.tabViewStyle(.page(indexDisplayMode: .automatic))
+    }
+}
 
 struct SplashScreen: View {
     @State private var goToNextPage = false
@@ -64,7 +64,7 @@ struct SplashScreen: View {
                 goToNextPage = true
             }
             .navigationDestination(isPresented: $goToNextPage) {
-                LandingPage().navigationBarBackButtonHidden(true)
+                PageManager().navigationBarBackButtonHidden(true)
             }
         }
     }
