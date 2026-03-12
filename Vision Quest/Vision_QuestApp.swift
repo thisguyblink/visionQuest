@@ -25,8 +25,11 @@ struct Vision_QuestApp: App {
 
     var body: some Scene {
         WindowGroup {
-            HomePage()
+            SplashScreen()
         }
         .modelContainer(sharedModelContainer)
     }
+}
+#Preview {
+    SplashScreen()
 }
