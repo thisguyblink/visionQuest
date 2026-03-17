@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		EACE7C392F68DBE300E71C4D /* secret.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EACE7C382F68DBE300E71C4D /* secret.xcconfig */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		9FE9DDE02F3E635300C35286 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,7 @@
 		9FE9DDCE2F3E635100C35286 /* Vision Quest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Vision Quest.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FE9DDDF2F3E635300C35286 /* Vision QuestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Vision QuestTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FE9DDE92F3E635300C35286 /* Vision QuestUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Vision QuestUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EACE7C382F68DBE300E71C4D /* secret.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secret.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -88,6 +93,7 @@
 		9FE9DDC52F3E635100C35286 = {
 			isa = PBXGroup;
 			children = (
+				EACE7C382F68DBE300E71C4D /* secret.xcconfig */,
 				9FE9DDD02F3E635100C35286 /* Vision Quest */,
 				9FE9DDE22F3E635300C35286 /* Vision QuestTests */,
 				9FE9DDEC2F3E635300C35286 /* Vision QuestUITests */,
@@ -228,6 +234,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EACE7C392F68DBE300E71C4D /* secret.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
