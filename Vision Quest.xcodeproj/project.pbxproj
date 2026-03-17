@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		EACE7C392F68DBE300E71C4D /* secret.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EACE7C382F68DBE300E71C4D /* secret.xcconfig */; };
+		EA5802372F68E5C600410C56 /* GoogleMaps in Frameworks */ = {isa = PBXBuildFile; productRef = EA5802362F68E5C600410C56 /* GoogleMaps */; };
+		EAAC6DC42F68DE26003786C3 /* secret.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EAAC6DC32F68DE26003786C3 /* secret.xcconfig */; };
+		EAAC6DC62F68E26E003786C3 /* secret_EXAMPLE.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EAAC6DC52F68E26E003786C3 /* secret_EXAMPLE.xcconfig */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,7 +33,8 @@
 		9FE9DDCE2F3E635100C35286 /* Vision Quest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Vision Quest.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FE9DDDF2F3E635300C35286 /* Vision QuestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Vision QuestTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FE9DDE92F3E635300C35286 /* Vision QuestUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Vision QuestUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		EACE7C382F68DBE300E71C4D /* secret.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secret.xcconfig; sourceTree = "<group>"; };
+		EAAC6DC32F68DE26003786C3 /* secret.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secret.xcconfig; sourceTree = "<group>"; };
+		EAAC6DC52F68E26E003786C3 /* secret_EXAMPLE.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secret_EXAMPLE.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -70,6 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA5802372F68E5C600410C56 /* GoogleMaps in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -93,7 +97,8 @@
 		9FE9DDC52F3E635100C35286 = {
 			isa = PBXGroup;
 			children = (
-				EACE7C382F68DBE300E71C4D /* secret.xcconfig */,
+				EAAC6DC52F68E26E003786C3 /* secret_EXAMPLE.xcconfig */,
+				EAAC6DC32F68DE26003786C3 /* secret.xcconfig */,
 				9FE9DDD02F3E635100C35286 /* Vision Quest */,
 				9FE9DDE22F3E635300C35286 /* Vision QuestTests */,
 				9FE9DDEC2F3E635300C35286 /* Vision QuestUITests */,
@@ -131,6 +136,7 @@
 			);
 			name = "Vision Quest";
 			packageProductDependencies = (
+				EA5802362F68E5C600410C56 /* GoogleMaps */,
 			);
 			productName = "Vision Quest";
 			productReference = 9FE9DDCE2F3E635100C35286 /* Vision Quest.app */;
@@ -234,7 +240,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EACE7C392F68DBE300E71C4D /* secret.xcconfig in Resources */,
+				EAAC6DC42F68DE26003786C3 /* secret.xcconfig in Resources */,
+				EAAC6DC62F68E26E003786C3 /* secret_EXAMPLE.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -294,16 +301,20 @@
 /* Begin XCBuildConfiguration section */
 		9FE9DDF32F3E635300C35286 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EAAC6DC32F68DE26003786C3 /* secret.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Vision Quest/Vision_Quest.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H66YVAKVA3;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Vision Quest/Info.plist";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app uses your location to provide navigation directions.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses the microphone to allow you to give voice commands.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app uses speech recognition to allow you to give voice commands.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -330,10 +341,13 @@
 				CODE_SIGN_ENTITLEMENTS = "Vision Quest/Vision_Quest.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H66YVAKVA3;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Vision Quest/Info.plist";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app uses your location to provide navigation directions.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses the microphone to allow you to give voice commands.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app uses speech recognition to allow you to give voice commands.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -354,6 +368,7 @@
 		};
 		9FE9DDF52F3E635300C35286 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EAAC6DC32F68DE26003786C3 /* secret.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -596,6 +611,14 @@
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EA5802362F68E5C600410C56 /* GoogleMaps */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EACE7BFB2F68D40F00E71C4D /* XCRemoteSwiftPackageReference "ios-maps-sdk" */;
+			productName = GoogleMaps;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 9FE9DDC62F3E635100C35286 /* Project object */;
 }

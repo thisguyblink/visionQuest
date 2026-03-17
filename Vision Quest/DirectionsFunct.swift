@@ -21,7 +21,7 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
     var currentStepIx = 0
     var nextStepCoord: CLLocationCoordinate2D?
 
-    let googleAPIKey = EnvLoader.get("GOOGLE_API_KEY") ?? ""
+    let googleAPIKey = Bundle.main.object(forInfoDictionaryKey: "GOOGLE_API_KEY") as? String ?? ""
 
     func setupLocation() {
         locationManager.delegate = self
