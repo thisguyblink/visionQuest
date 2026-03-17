@@ -5,6 +5,7 @@ struct Depth_Map: View {
     @StateObject private var camera = DepthCameraManager()
     
     var body: some View {
+    
         VStack(spacing: 20) {
             
             if camera.depthAvailable {
@@ -12,11 +13,11 @@ struct Depth_Map: View {
             } else {
                 Text("LiDAR Not Available ❌")
             }
+            
             Button("Capture Depth Photo") {
-                camera.capturePhoto()
+                camera.captureDepthMap()
             }
         }
-        .padding()
     }
 }
 

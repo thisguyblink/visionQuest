@@ -1,70 +1,73 @@
-import AVFoundation
+import Foundation
+import ARKit
 import SwiftUI
 
-class DepthCameraManager: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate {
+class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
     
-    let session = AVCaptureSession()
-    private let photoOutput = AVCapturePhotoOutput()
-    
-    @Published var depthAvailable = false
-    
-    override init() {
-        super.init()
-        configureSession()
-    }
+     let session = AVCaptureSession()
+     private let photoOutput = AVCapturePhotoOutput()
+     
+     @Published var depthAvailable = false
+     
+     override init() {
+         super.init()
+         configureSession()
+     }
     
     private func configureSession() {
-        session.beginConfiguration()
-        
-        guard let device = AVCaptureDevice.default(.builtInLiDARDepthCamera,
-                                                   for: .video,
-                                                   position: .back) else {
-            print("No LiDAR device")
-            return
-        }
-        
-        do {
-            let input = try AVCaptureDeviceInput(device: device)
-            
-            if session.canAddInput(input) {
-                session.addInput(input)
-            }
-            
-            if session.canAddOutput(photoOutput) {
-                session.addOutput(photoOutput)
-                photoOutput.isDepthDataDeliveryEnabled = true
-            }
-            
-            depthAvailable = photoOutput.isDepthDataDeliverySupported
-            
-            session.commitConfiguration()
-            session.startRunning()
-            
-        } catch {
-            print("Error configuring session: \(error)")
-        }
+           session.beginConfiguration()
+           
+           guard let device = AVCaptureDevice.default(.builtInLiDARDepthCamera, for: .video, position: .back) else {
+               print("No LiDAR device")
+               return
+           }
+           
+           do {
+               let input = try AVCaptureDeviceInput(device: device)
+               
+               if session.canAddInput(input) {
+                   session.addInput(input)
+               }
+               
+               if session.canAddOutput(photoOutput) {
+                   session.addOutput(photoOutput)
+                   photoOutput.isDepthDataDeliveryEnabled = true
+               }
+               
+               depthAvailable = photoOutput.isDepthDataDeliverySupported
+               
+               session.commitConfiguration()
+               session.startRunning()
+               
+           } catch {
+               print("Error configuring session: \(error)")
+           }
+       }
+    
+    func makeUIView(context: Context) -> some UIView {
+        let arView = ARView(frame: .zero)
+        let config = ARWorldTrackingConfiguration()
+        config.environmentTexturing = .automatic
+        arView.session.?.delegate = context.coordinator
+        arView.session.run(config)
+        return arView
     }
     
-    func capturePhoto() {
-        let settings = AVCapturePhotoSettings()
-        settings.isDepthDataDeliveryEnabled = true
+    func captureDepthMap() {
         
-        photoOutput.capturePhoto(with: settings, delegate: self)
+    }
+
+}
+
+class ARSessionDelegateCoordinator: NSObject, ARSessionDelegate {
+    @Binding var depthMap: CVPixelBuffer?
+    
+    init(depthMap: CVPixelBuffer? = nil) {
+        self.depthMap = depthMap
+    }
+
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        guard let currentPointCloud = frame. 
     }
     
-    // MARK: - Delegate
-    
-    func photoOutput(_ output: AVCapturePhotoOutput,
-                     didFinishProcessingPhoto photo: AVCapturePhoto,
-                     error: Error?) {
-        
-        if let depthData = photo.depthData {
-            print("Depth data captured!")
-            
-            let convertedDepth = depthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32)
-            let depthMap = convertedDepth.depthDataMap
-            
-            print("Depth map size: \(CVPixelBufferGetWidth(depthMap)) x \(CVPixelBufferGetHeight(depthMap))")
-        }
-    }
 }
