@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		EA5802372F68E5C600410C56 /* GoogleMaps in Frameworks */ = {isa = PBXBuildFile; productRef = EA5802362F68E5C600410C56 /* GoogleMaps */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		9FE9DDE02F3E635300C35286 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA5802372F68E5C600410C56 /* GoogleMaps in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +130,7 @@
 			);
 			name = "Vision Quest";
 			packageProductDependencies = (
+				EA5802362F68E5C600410C56 /* GoogleMaps */,
 			);
 			productName = "Vision Quest";
 			productReference = 9FE9DDCE2F3E635100C35286 /* Vision Quest.app */;
@@ -208,6 +214,9 @@
 			);
 			mainGroup = 9FE9DDC52F3E635100C35286;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				EACE7BFB2F68D40F00E71C4D /* XCRemoteSwiftPackageReference "ios-maps-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 9FE9DDCF2F3E635100C35286 /* Products */;
 			projectDirPath = "";
@@ -294,6 +303,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Vision Quest/Info.plist";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app uses your location to provide navigation directions.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses the microphone to allow you to give voice commands.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app uses speech recognition to allow you to give voice commands.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -324,6 +336,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Vision Quest/Info.plist";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app uses your location to provide navigation directions.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "This app uses the microphone to allow you to give voice commands.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "This app uses speech recognition to allow you to give voice commands.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -575,6 +590,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		EACE7BFB2F68D40F00E71C4D /* XCRemoteSwiftPackageReference "ios-maps-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googlemaps/ios-maps-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 10.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EA5802362F68E5C600410C56 /* GoogleMaps */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EACE7BFB2F68D40F00E71C4D /* XCRemoteSwiftPackageReference "ios-maps-sdk" */;
+			productName = GoogleMaps;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 9FE9DDC62F3E635100C35286 /* Project object */;
 }
