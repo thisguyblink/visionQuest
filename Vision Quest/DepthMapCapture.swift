@@ -24,43 +24,40 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
         }
     
     func start() {
-           guard ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) else {
-               print("Scene depth not supported on this device")
-               return
-           }
-           
-           let config = ARWorldTrackingConfiguration()
-           config.frameSemantics = .sceneDepth  // enables depth + confidence
-           session.run(config)
-           isRunning = true
-       }
+        guard ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) else {
+            print("❌ Scene depth not supported")
+            return
+        }
+        print("✅ Starting ARSession")
+        let config = ARWorldTrackingConfiguration()
+        config.frameSemantics = .sceneDepth
+        session.run(config)
+        isRunning = true
+    }
+
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        print("📸 Frame received")  // add this
+        guard let depth = frame.smoothedSceneDepth ?? frame.sceneDepth else {
+            print("❌ No depth data in frame")
+            return
+        }
+        print("✅ Depth data found")
+        let grid = buildGrid(from: depth.depthMap, confidence: depth.confidenceMap)
+        DispatchQueue.main.async {
+            self.latestDepthGrid = grid
+        }
+    }
+    
+    func startMock() {
+        latestDepthGrid = buildMockGrid()
+        isRunning = true
+    }
     
     func stop() {
             session.pause()
             isRunning = false
         }
     
-    func session(_ session: ARSession, didUpdate frame: ARFrame) {
-           // Use smoothed depth if available — less noise
-           guard let depth = frame.smoothedSceneDepth ?? frame.sceneDepth else { return }
-           
-           let grid = buildGrid(from: depth.depthMap, confidence: depth.confidenceMap)
-           
-           DispatchQueue.main.async {
-               self.latestDepthGrid = grid
-           }
-       }
-    
-    func mockSession(_ session: ARSession, didUpdate frame: ARFrame) {
-           // Use smoothed depth if available — less noise
-           guard let depth = frame.smoothedSceneDepth ?? frame.sceneDepth else { return }
-           
-           let grid = buildGrid(from: depth.depthMap, confidence: depth.confidenceMap)
-           
-           DispatchQueue.main.async {
-               self.latestDepthGrid = grid
-           }
-       }
     
     private func buildGrid(from depthBuffer: CVPixelBuffer,
                                confidence confidenceBuffer: CVPixelBuffer?) -> DepthGrid {
@@ -121,5 +118,35 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
             
             return DepthGrid(values: grid, width: width, height: height, maxDepth: MaxDepth, minDepth: MinDepth)
         }
+    
+    func buildMockGrid() -> DepthGrid {
+        let width = 256
+        let height = 192
+        var grid = Array(repeating: Array(repeating: Float(0), count: width), count: height)
+        
+        var maxDepth: Float = 0
+        var minDepth: Float = Float.greatestFiniteMagnitude
+        
+        for row in 0..<height {
+            for col in 0..<width {
+                // Simulate a scene — close object in center, farther at edges
+                let centerX = Float(width) / 2
+                let centerY = Float(height) / 2
+                let dx = (Float(col) - centerX) / centerX
+                let dy = (Float(row) - centerY) / centerY
+                let distance = sqrt(dx * dx + dy * dy)  // 0 = center, ~1.4 = corner
+                
+                // Map to realistic depth range: 0.5m to 5.0m
+                let depth = 0.5 + distance * 3.2
+                
+                grid[row][col] = depth
+                if depth > maxDepth { maxDepth = depth }
+                if depth < minDepth { minDepth = depth }
+            }
+        }
+        
+        return DepthGrid(values: grid, width: width, height: height,
+                         maxDepth: maxDepth, minDepth: minDepth)
+    }
         
 }
