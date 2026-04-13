@@ -2,7 +2,7 @@ import Foundation
 import Speech // For speech recognition, audio-to-text
 import AVFoundation // for text-to-speech
 
-class SpeechFuncts {
+class SpeechFuncts: NSObject, ObservableObject{
 
     let speechSynthesizer = AVSpeechSynthesizer()
     let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))

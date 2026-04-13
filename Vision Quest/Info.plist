@@ -8,5 +8,13 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Vision Quest needs your location to provide navigation</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Vision Quest needs your mic </string>
+	<key>CFBundleIdentifier</key>
+	<string></string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>VIsion Quest needs to recognize speech</string>
 </dict>
 </plist>

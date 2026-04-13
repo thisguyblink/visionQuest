@@ -20,6 +20,10 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
     var navigationSteps: [[String: Any]] = []
     var currentStepIx = 0
     var nextStepCoord: CLLocationCoordinate2D?
+    
+    var onResultReady: (() -> Void)?
+    var onNavigationStart: (() -> Void)?
+    var onNavigationEnd: (() -> Void)?
 
     let googleAPIKey = Bundle.main.object(forInfoDictionaryKey: "GOOGLE_API_KEY") as? String ?? ""
 
