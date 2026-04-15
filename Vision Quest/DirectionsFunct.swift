@@ -6,6 +6,10 @@ import GoogleMaps
 class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     @Published var mapView: GMSMapView?
+    @Published var recognizedSpeech: String = ""
+    @Published var debugMessage: String = "Idle"
+    @Published var selectedPlaceName: String = ""
+    var hasHandledSpeechResult = false
 
     let locationManager = CLLocationManager()
     let speech = SpeechFuncts()
@@ -73,39 +77,105 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     // MARK: Start Voice Search
     func startListening() {
+        hasHandledSpeechResult = false
+        recognizedSpeech = ""
+        selectedPlaceName = ""
+        debugMessage = "Listening..."
+
         speech.speak("Where would you like to go?")
+
         speech.startListening { query in
-            self.searchDestination(query: query)
+            DispatchQueue.main.async {
+                let cleaned = query.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                if self.hasHandledSpeechResult { return }
+                if cleaned.isEmpty {
+                    self.debugMessage = "Speech recognized empty text"
+                    return
+                }
+
+                self.hasHandledSpeechResult = true
+                self.recognizedSpeech = cleaned
+                self.debugMessage = "Recognized: \(cleaned)"
+                print("DEBUG recognized query:", cleaned)
+
+                self.searchDestination(query: cleaned)
+            }
         }
     }
-
+    
     // MARK: Search Destination
     func searchDestination(query: String) {
         guard let location = userLocation else {
+            DispatchQueue.main.async {
+                self.debugMessage = "No user location available"
+            }
             speech.speak("Unable to get your location. Please try again.")
             return
         }
-        // Google Places API Text Search to find locations matching the query near the user
-        let urlString = "https://maps.googleapis.com/maps/api/place/textsearch/json?query=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&location=\(location.latitude),\(location.longitude)&radius=5000&key=\(googleAPIKey)"
 
-        guard let url = URL(string: urlString) else { return }
+        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let urlString = "https://maps.googleapis.com/maps/api/place/textsearch/json?query=\(encodedQuery)&location=\(location.latitude),\(location.longitude)&radius=5000&key=\(googleAPIKey)"
+
+        DispatchQueue.main.async {
+            self.debugMessage = "Searching for: \(query)"
+            print("DEBUG recognized query:", query)
+            print("DEBUG places url:", urlString)
+        }
+
+        guard let url = URL(string: urlString) else {
+            DispatchQueue.main.async {
+                self.debugMessage = "Invalid Places URL"
+            }
+            return
+        }
+
         URLSession.shared.dataTask(with: url) { data, response, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    self.debugMessage = "Network error: \(error.localizedDescription)"
+                    print("DEBUG network error:", error.localizedDescription)
+                }
+                return
+            }
 
-            if let data = data {
-                do {
-                    if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let results = json["results"] as? [[String: Any]] {
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    self.debugMessage = "No data returned from Places API"
+                }
+                return
+            }
+
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    print("DEBUG places response:", json)
+
+                    let status = json["status"] as? String ?? "UNKNOWN"
+                    let results = json["results"] as? [[String: Any]] ?? []
+
+                    DispatchQueue.main.async {
+                        self.placeResults = results
+                        self.currentPlaceIndex = 0
+                        self.debugMessage = "Places status: \(status), results: \(results.count)"
+                    }
+
+                    if results.isEmpty {
                         DispatchQueue.main.async {
-                            self.placeResults = results
-                            self.currentPlaceIndex = 0
+                            self.selectedPlaceName = ""
+                            self.onResultReady?()
+                        }
+                        self.speech.speak("I could not find any matching places.")
+                    } else {
+                        DispatchQueue.main.async {
                             self.showNextLocation()
                         }
                     }
-                } catch {
-                    print("JSON parsing error: \(error.localizedDescription)")
                 }
-            } else if let error = error {
-                print("Network error: \(error.localizedDescription)")
+            } catch {
+                DispatchQueue.main.async {
+                    self.debugMessage = "JSON parsing error: \(error.localizedDescription)"
+                    print("DEBUG JSON parsing error:", error.localizedDescription)
+                }
             }
         }.resume()
     }
@@ -113,15 +183,23 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: Show Next Location
     func showNextLocation() {
         guard !placeResults.isEmpty else {
+            debugMessage = "No results to show"
+            selectedPlaceName = ""
+            onResultReady?()
             speech.speak("No more results found.")
             return
         }
 
         if currentPlaceIndex >= placeResults.count {
+            debugMessage = "Reached end of results"
+            selectedPlaceName = ""
+            onResultReady?()
             speech.speak("No more results found.")
             return
         }
+
         let place = placeResults[currentPlaceIndex]
+
         guard
             let name = place["name"] as? String,
             let geometry = place["geometry"] as? [String: Any],
@@ -129,7 +207,14 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
             let latitude = location["lat"] as? CLLocationDegrees,
             let longitude = location["lng"] as? CLLocationDegrees,
             let userLoc = userLocation
-        else { return }
+        else {
+            debugMessage = "Malformed place result"
+            return
+        }
+
+        selectedPlaceName = name
+        debugMessage = "Showing result \(currentPlaceIndex + 1) of \(placeResults.count): \(name)"
+        print("DEBUG showing place:", name, latitude, longitude)
 
         let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         mapView?.clear()
@@ -141,7 +226,11 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
         let cameraUpdate = GMSCameraUpdate.setTarget(coordinate, zoom: 15)
         mapView?.animate(with: cameraUpdate)
 
-        let distanceMiles = CLLocation(latitude: userLoc.latitude, longitude: userLoc.longitude).distance(from: CLLocation(latitude: latitude, longitude: longitude)) / 1609.34
+        let distanceMiles =
+            CLLocation(latitude: userLoc.latitude, longitude: userLoc.longitude)
+            .distance(from: CLLocation(latitude: latitude, longitude: longitude)) / 1609.34
+
+        onResultReady?()
 
         speech.speak("\(name) is \(String(format: "%.2f", distanceMiles)) miles away. Would you like to go there?")
     }

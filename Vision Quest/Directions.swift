@@ -15,6 +15,8 @@ struct Directions: View {
     @StateObject private var speech = SpeechFuncts()
     @State private var isListening = false
     @State private var navigationState: NavState = .idle
+    
+
 
     // swipe feature
     enum NavState {
@@ -26,7 +28,7 @@ struct Directions: View {
 
     var body: some View {
         ZStack {
-
+            
             // Map Layer
             if let mapView = dirFunc.mapView {
                 GoogleMapView(mapView: mapView)
@@ -34,22 +36,22 @@ struct Directions: View {
             } else {
                 Color.black.ignoresSafeArea()
             }
-
+            
             // UI Overlay
             VStack {
                 Spacer()
-
+                
                 switch navigationState {
-
+                    
                 case .idle:
                     micButton
-
+                    
                 case .searching:
                     statusCard(icon: "magnifyingglass", message: "Searching...")
-
+                    
                 case .confirming:
                     swipeCard
-
+                    
                 case .navigating:
                     navigationCard
                 }
@@ -58,13 +60,19 @@ struct Directions: View {
         }
         .onAppear {
             dirFunc.setupLocation()
+            
             dirFunc.onResultReady = {
+                isListening = false
                 navigationState = .confirming
             }
+            
             dirFunc.onNavigationStart = {
+                isListening = false
                 navigationState = .navigating
             }
+            
             dirFunc.onNavigationEnd = {
+                isListening = false
                 navigationState = .idle
             }
         }
@@ -76,12 +84,7 @@ struct Directions: View {
             isListening = true
             navigationState = .searching
             dirFunc.startListening()
-            // After search returns result onResultReady executes
-            DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
-                if navigationState == .searching {
-                    navigationState = .confirming
-                }
-            }
+        
         } label: {
             VStack(spacing: 12) {
                 Image(systemName: isListening ? "mic.fill" : "mic")
