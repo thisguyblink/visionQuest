@@ -44,7 +44,12 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
                 longitude: location.coordinate.longitude,
                 zoom: 15
             )
-            mapView = GMSMapView(frame: .zero, camera: camera)
+            
+            let options = GMSMapViewOptions()
+            options.camera = camera
+            options.frame = .zero
+
+            mapView = GMSMapView(options: options)
             mapView?.isMyLocationEnabled = true
         } else {
             let cameraUpdate = GMSCameraUpdate.setTarget(location.coordinate)
