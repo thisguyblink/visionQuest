@@ -7,6 +7,11 @@ class SpeechFuncts: NSObject, ObservableObject{
     let speechSynthesizer = AVSpeechSynthesizer()
     let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
     let audioEngine = AVAudioEngine()
+    
+    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var recognitionTask: SFSpeechRecognitionTask?
+    private var hasReturnedResult = false
+
 
     // MARK: Request Speech Permission
     func requestSpeech() {
@@ -29,28 +34,32 @@ class SpeechFuncts: NSObject, ObservableObject{
 
     // MARK: Voice Input
     func startListening(completion: @escaping (String) -> Void) {
-        // collects speech to send to recognition
         let request = SFSpeechAudioBufferRecognitionRequest()
-        // mic input to hold live mic audio
         let inputNode = audioEngine.inputNode
-        request.shouldReportPartialResults = false
+        request.shouldReportPartialResults = true
 
         let recordingFormat = inputNode.outputFormat(forBus: 0)
-
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
             request.append(buffer)
         }
 
-        speechRecognizer?.recognitionTask(with: request) { result, error in
+        var silenceTimer: Timer?
+
+        recognitionRequest = request
+        recognitionTask = speechRecognizer?.recognitionTask(with: request) { result, error in
             if let error = error {
                 print("Speech recognition error: \(error.localizedDescription)")
+                self.stopListening()
                 return
             }
 
-            if let result = result {
+            guard let result = result else { return }
+
+            // Reset timer on every new partial result
+            silenceTimer?.invalidate()
+            silenceTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: false) { _ in
                 let spokenText = result.bestTranscription.formattedString
-                self.audioEngine.stop()
-                inputNode.removeTap(onBus: 0)
+                self.stopListening()
                 completion(spokenText)
             }
         }
@@ -58,4 +67,22 @@ class SpeechFuncts: NSObject, ObservableObject{
         audioEngine.prepare()
         try? audioEngine.start()
     }
+    func stopListening() {
+        if audioEngine.isRunning {
+            audioEngine.stop()
+        }
+
+        audioEngine.inputNode.removeTap(onBus: 0)
+
+        recognitionRequest?.endAudio()
+        recognitionTask?.cancel()
+
+        recognitionRequest = nil
+        recognitionTask = nil
+        hasReturnedResult = false
+    }
+
+    
+    
 }
+

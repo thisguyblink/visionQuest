@@ -83,22 +83,21 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
         debugMessage = "Listening..."
 
         speech.speak("Where would you like to go?")
+        speech.startListening { [weak self] query in
+            guard let self else { return }
 
-        speech.startListening { query in
             DispatchQueue.main.async {
-                let cleaned = query.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !self.hasHandledSpeechResult else { return }
 
-                if self.hasHandledSpeechResult { return }
-                if cleaned.isEmpty {
-                    self.debugMessage = "Speech recognized empty text"
+                let cleaned = query.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !cleaned.isEmpty else {
+                    self.debugMessage = "No speech detected"
                     return
                 }
 
                 self.hasHandledSpeechResult = true
                 self.recognizedSpeech = cleaned
                 self.debugMessage = "Recognized: \(cleaned)"
-                print("DEBUG recognized query:", cleaned)
-
                 self.searchDestination(query: cleaned)
             }
         }
