@@ -35,6 +35,22 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.delegate = self
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
+
+        if mapView == nil {
+            let camera = GMSCameraPosition.camera(
+                withLatitude: 33.883,
+                longitude: -117.885,
+                zoom: 14
+            )
+
+            let options = GMSMapViewOptions()
+            options.camera = camera
+            options.frame = .zero
+
+            mapView = GMSMapView(options: options)
+            mapView?.isMyLocationEnabled = true
+            mapView?.settings.myLocationButton = true
+        }
     }
 
     // MARK: Location Updates
@@ -152,10 +168,41 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
                     let status = json["status"] as? String ?? "UNKNOWN"
                     let results = json["results"] as? [[String: Any]] ?? []
 
+                    let sortedResults = results.sorted { a, b in
+                        guard
+                            let aGeo = a["geometry"] as? [String: Any],
+                            let aLoc = aGeo["location"] as? [String: Any],
+                            let aLat = aLoc["lat"] as? CLLocationDegrees,
+                            let aLng = aLoc["lng"] as? CLLocationDegrees,
+
+                            let bGeo = b["geometry"] as? [String: Any],
+                            let bLoc = bGeo["location"] as? [String: Any],
+                            let bLat = bLoc["lat"] as? CLLocationDegrees,
+                            let bLng = bLoc["lng"] as? CLLocationDegrees
+                        else {
+                            return false
+                        }
+
+                        let userCLLocation = CLLocation(
+                            latitude: location.latitude,
+                            longitude: location.longitude
+                        )
+
+                        let aDistance = userCLLocation.distance(
+                            from: CLLocation(latitude: aLat, longitude: aLng)
+                        )
+
+                        let bDistance = userCLLocation.distance(
+                            from: CLLocation(latitude: bLat, longitude: bLng)
+                        )
+
+                        return aDistance < bDistance
+                    }
+
                     DispatchQueue.main.async {
-                        self.placeResults = results
+                        self.placeResults = sortedResults
                         self.currentPlaceIndex = 0
-                        self.debugMessage = "Places status: \(status), results: \(results.count)"
+                        self.debugMessage = "Places status: \(status), results: \(sortedResults.count)"
                     }
 
                     if results.isEmpty {
