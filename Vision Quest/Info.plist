@@ -4,5 +4,9 @@
 <dict>
 	<key>GOOGLE_API_KEY</key>
 	<string>$(GOOGLE_API_KEY)</string>
+	<key>NSCameraUsageDescription</key>
+	<string></string>
+	<key>UIBackgroundModes</key>
+	<array/>
 </dict>
 </plist>
