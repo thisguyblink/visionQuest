@@ -7,9 +7,19 @@
 
 import SwiftUI
 import SwiftData
+import GoogleMaps
 
 @main
 struct Vision_QuestApp: App {
+    init() {
+        guard let key = Bundle.main.object(forInfoDictionaryKey: "GOOGLE_API_KEY") as? String,
+              !key.isEmpty,
+              key != "$(GOOGLE_API_KEY)" else {
+            fatalError("GOOGLE_API_KEY is missing or was not substituted from xcconfig")
+        }
+
+        GMSServices.provideAPIKey(key)
+    }
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
