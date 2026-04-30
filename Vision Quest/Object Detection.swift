@@ -24,7 +24,6 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
     
     override init() {
         super.init()
-        print("DEBUG [ViewModel init]: starting setup")
         setupAll()
     }
     
@@ -32,7 +31,6 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
     
     func setupAll() {
         guard let videoDevice = discoverCamera() else {
-            print("DEBUG [setupAll]: FAILED — no camera found")
             return
         }
         setupCaptureSession(videoDevice: videoDevice)
@@ -40,7 +38,6 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
         
         DispatchQueue.global(qos: .userInitiated).async {
                 self.session.startRunning()
-                print("DEBUG [setupAll]: session.startRunning() called — running: \(self.session.isRunning)")
             }
     }
     
@@ -50,15 +47,12 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
             mediaType: .video,
             position: .back
         ).devices
-        print("DEBUG [discoverCamera]: found \(devices.count) device(s) — \(devices.map { $0.localizedName })")
         return devices.first
     }
     
     private func setupCaptureSession(videoDevice: AVCaptureDevice) {
-        print("DEBUG [setupCaptureSession]: starting with device: \(videoDevice.localizedName)")
         
         guard let deviceInput = try? AVCaptureDeviceInput(device: videoDevice) else {
-            print("DEBUG [setupCaptureSession]: FAILED — could not create device input")
             return
         }
         
@@ -66,19 +60,16 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
         session.sessionPreset = .vga640x480
         
         guard session.canAddInput(deviceInput) else {
-            print("DEBUG [setupCaptureSession]: FAILED — cannot add input")
             session.commitConfiguration()
             return
         }
         
         session.addInput(deviceInput)
-        print("DEBUG [setupCaptureSession]: input added, total inputs: \(session.inputs.count)")
         
         videoDataOutput.alwaysDiscardsLateVideoFrames = true
         videoDataOutput.setSampleBufferDelegate(self, queue: videoDataOutputQueue)
         
         guard session.canAddOutput(videoDataOutput) else {
-            print("DEBUG [setupCaptureSession]: FAILED — cannot add output")
             session.commitConfiguration()
             return
         }
@@ -92,20 +83,16 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
             bufferSize.width  = CGFloat(dimensions.width)
             bufferSize.height = CGFloat(dimensions.height)
             videoDevice.unlockForConfiguration()
-            print("DEBUG [setupCaptureSession]: bufferSize: \(bufferSize)")
         } catch {
             print("DEBUG [setupCaptureSession]: buffer size error — \(error)")
         }
         
         session.commitConfiguration()
-        print("DEBUG [setupCaptureSession]: committed — inputs: \(session.inputs.count), outputs: \(session.outputs.count)")
     }
     
     private func setupVisionRequest() {
-        print("DEBUG [setupVisionRequest]: loading CoreML model")
         do {
             let visionModel = try VNCoreMLModel(for: best().model)
-            print("DEBUG [setupVisionRequest]: model loaded successfully")
             
             let objectRecognition = VNCoreMLRequest(model: visionModel) { [weak self] request, error in
                 if let error = error {
@@ -113,7 +100,6 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
                     return
                 }
                 let count = request.results?.count ?? 0
-                print("DEBUG [VNCoreMLRequest]: \(count) result(s)")
                 DispatchQueue.main.async {
                     if let results = request.results {
                         self?.drawVisionRequestResults(results)
@@ -132,7 +118,6 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else {
-            print("DEBUG [captureOutput]: no pixel buffer")
             return
         }
         
@@ -200,7 +185,6 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
                     type = "default"
                 }
             
-            print("DEBUG [draw]: detection \(i) — conf: \(String(format: "%.2f", confidence)), type: \(type), box: (\(xCenter), \(yCenter), \(width), \(height))")
             
             // Convert from center format to pixel coords
             
@@ -229,10 +213,6 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
                 type:        type
             )
 
-            print("DEBUG [draw]: normalizedRect — \(normalizedRect)")
-            print("DEBUG [draw]: scaledRect — \(scaledRect)")
-            print("DEBUG [data]: saved object detection data -> \(objectDetectionData.description)")
-            
             let shapeLayer = createRoundedRectLayer(bounds: scaledRect)
             let textLayer  = createTextLayer(
                 bounds: scaledRect,
@@ -244,7 +224,6 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
             boxesDrawn += 1
         }
         
-        print("DEBUG [draw]: drew \(boxesDrawn) box(es)")
     }
     private func createRoundedRectLayer(bounds: CGRect) -> CALayer {
         let layer = CALayer()
@@ -324,7 +303,6 @@ struct DetectionOverlay: UIViewRepresentable {
     let detectionLayer: CALayer
 
     func makeUIView(context: Context) -> UIView {
-        print("DEBUG [DetectionOverlay]: makeUIView")
         let view = UIView(frame: .zero)
         view.backgroundColor = .clear
         view.layer.addSublayer(detectionLayer)
@@ -334,7 +312,6 @@ struct DetectionOverlay: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {
         detectionLayer.frame = uiView.bounds
         detectionLayer.setAffineTransform(.identity)  // reset any previous transform
-        print("DEBUG [CameraPreview]: updateUIView — bounds: \(uiView.bounds)")
     }
 }
 
