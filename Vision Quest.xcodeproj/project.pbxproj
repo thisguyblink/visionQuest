@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EA2CEA432FA3E88A00C43E5F /* best.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = EA2CEA422FA3E88A00C43E5F /* best.mlpackage */; };
+		EA2CEA442FA3E88A00C43E5F /* best.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = EA2CEA422FA3E88A00C43E5F /* best.mlpackage */; };
 		EA5802372F68E5C600410C56 /* GoogleMaps in Frameworks */ = {isa = PBXBuildFile; productRef = EA5802362F68E5C600410C56 /* GoogleMaps */; };
 		EAAC6DC62F68E26E003786C3 /* secret_EXAMPLE.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EAAC6DC52F68E26E003786C3 /* secret_EXAMPLE.xcconfig */; };
 		EAE456082F80530F00035FC3 /* secret.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EAE456072F80530F00035FC3 /* secret.xcconfig */; };
@@ -35,6 +37,7 @@
 		9FE9DDCE2F3E635100C35286 /* Vision Quest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Vision Quest.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FE9DDDF2F3E635300C35286 /* Vision QuestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Vision QuestTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FE9DDE92F3E635300C35286 /* Vision QuestUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Vision QuestUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EA2CEA422FA3E88A00C43E5F /* best.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = best.mlpackage; sourceTree = "<group>"; };
 		EAAC6DC52F68E26E003786C3 /* secret_EXAMPLE.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secret_EXAMPLE.xcconfig; sourceTree = "<group>"; };
 		EAE456072F80530F00035FC3 /* secret.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secret.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -105,6 +108,7 @@
 				9FE9DDE22F3E635300C35286 /* Vision QuestTests */,
 				9FE9DDEC2F3E635300C35286 /* Vision QuestUITests */,
 				9FE9DDCF2F3E635100C35286 /* Products */,
+				EA2CEA422FA3E88A00C43E5F /* best.mlpackage */,
 			);
 			sourceTree = "<group>";
 		};
@@ -270,6 +274,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA2CEA432FA3E88A00C43E5F /* best.mlpackage in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -277,6 +282,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA2CEA442FA3E88A00C43E5F /* best.mlpackage in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
