@@ -10,6 +10,10 @@
 		EA2CEA432FA3E88A00C43E5F /* best.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = EA2CEA422FA3E88A00C43E5F /* best.mlpackage */; };
 		EA2CEA442FA3E88A00C43E5F /* best.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = EA2CEA422FA3E88A00C43E5F /* best.mlpackage */; };
 		EA5802372F68E5C600410C56 /* GoogleMaps in Frameworks */ = {isa = PBXBuildFile; productRef = EA5802362F68E5C600410C56 /* GoogleMaps */; };
+		EAAC6DC62F68E26E003786C3 /* secret_EXAMPLE.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EAAC6DC52F68E26E003786C3 /* secret_EXAMPLE.xcconfig */; };
+		EAE456082F80530F00035FC3 /* secret.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EAE456072F80530F00035FC3 /* secret.xcconfig */; };
+		EAE456092F80530F00035FC3 /* secret.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EAE456072F80530F00035FC3 /* secret.xcconfig */; };
+		EAE4560A2F80530F00035FC3 /* secret.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = EAE456072F80530F00035FC3 /* secret.xcconfig */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +38,8 @@
 		9FE9DDDF2F3E635300C35286 /* Vision QuestTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Vision QuestTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		9FE9DDE92F3E635300C35286 /* Vision QuestUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Vision QuestUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EA2CEA422FA3E88A00C43E5F /* best.mlpackage */ = {isa = PBXFileReference; lastKnownFileType = folder.mlpackage; path = best.mlpackage; sourceTree = "<group>"; };
+		EAAC6DC52F68E26E003786C3 /* secret_EXAMPLE.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secret_EXAMPLE.xcconfig; sourceTree = "<group>"; };
+		EAE456072F80530F00035FC3 /* secret.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = secret.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -96,6 +102,8 @@
 		9FE9DDC52F3E635100C35286 = {
 			isa = PBXGroup;
 			children = (
+				EAAC6DC52F68E26E003786C3 /* secret_EXAMPLE.xcconfig */,
+				EAE456072F80530F00035FC3 /* secret.xcconfig */,
 				9FE9DDD02F3E635100C35286 /* Vision Quest */,
 				9FE9DDE22F3E635300C35286 /* Vision QuestTests */,
 				9FE9DDEC2F3E635300C35286 /* Vision QuestUITests */,
@@ -238,6 +246,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EAE456082F80530F00035FC3 /* secret.xcconfig in Resources */,
+				EAAC6DC62F68E26E003786C3 /* secret_EXAMPLE.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -245,6 +255,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EAE456092F80530F00035FC3 /* secret.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -252,6 +263,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EAE4560A2F80530F00035FC3 /* secret.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -299,13 +311,14 @@
 /* Begin XCBuildConfiguration section */
 		9FE9DDF32F3E635300C35286 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EAE456072F80530F00035FC3 /* secret.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Vision Quest/Vision_Quest.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H66YVAKVA3;
+				DEVELOPMENT_TEAM = 53J7SPX8F4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Vision Quest/Info.plist";
@@ -317,12 +330,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.Patrick-Smith.Vision-Quest";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Christian-Carrillo.Vision-Quest";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -332,13 +346,14 @@
 		};
 		9FE9DDF42F3E635300C35286 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EAE456072F80530F00035FC3 /* secret.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Vision Quest/Vision_Quest.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = H66YVAKVA3;
+				DEVELOPMENT_TEAM = 53J7SPX8F4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Vision Quest/Info.plist";
@@ -350,12 +365,13 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.Patrick-Smith.Vision-Quest";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Christian-Carrillo.Vision-Quest";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -365,6 +381,7 @@
 		};
 		9FE9DDF52F3E635300C35286 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EAE456072F80530F00035FC3 /* secret.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -429,6 +446,7 @@
 		};
 		9FE9DDF62F3E635300C35286 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EAE456072F80530F00035FC3 /* secret.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -486,13 +504,14 @@
 		};
 		9FE9DDF82F3E635300C35286 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EAE456072F80530F00035FC3 /* secret.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H66YVAKVA3;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.Patrick-Smith.Vision-QuestTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -505,13 +524,14 @@
 		};
 		9FE9DDF92F3E635300C35286 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EAE456072F80530F00035FC3 /* secret.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H66YVAKVA3;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.Patrick-Smith.Vision-QuestTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -524,11 +544,13 @@
 		};
 		9FE9DDFB2F3E635300C35286 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EAE456072F80530F00035FC3 /* secret.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H66YVAKVA3;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.Patrick-Smith.Vision-QuestUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -541,11 +563,13 @@
 		};
 		9FE9DDFC2F3E635300C35286 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EAE456072F80530F00035FC3 /* secret.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = H66YVAKVA3;
 				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.Patrick-Smith.Vision-QuestUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
