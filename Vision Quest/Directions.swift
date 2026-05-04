@@ -16,6 +16,7 @@ struct Directions: View {
     @StateObject private var speech = SpeechFuncts()
     @State private var isListening = false
     @State private var navigationState: NavState = .idle
+    @Binding var currentPage: AppPage
 
     enum NavState {
         case idle
@@ -55,8 +56,6 @@ struct Directions: View {
             .padding(.bottom, 40)
         }
         .onAppear {
-            // If the home mic button already started a search, jump straight
-            // to the right state; otherwise start fresh in idle.
             dirFunc.setupLocation()
 
             dirFunc.onResultReady = {
@@ -108,6 +107,7 @@ struct Directions: View {
 
     // MARK: Swipe Card (confirm/deny destination)
     var swipeCard: some View {
+
         VStack(spacing: 16) {
             Text("Swipe to respond")
                 .font(.caption)
@@ -119,8 +119,8 @@ struct Directions: View {
                 }
 
                 swipeActionButton(icon: "checkmark", label: "Yes", color: .green) {
-                    dirFunc.userResponse("yes")
-                    navigationState = .navigating
+                    dirFunc.userResponse("yes")   // starts navigation + audio
+                    self.currentPage = .depthMap        // switch to camera view immediately
                 }
             }
 
@@ -140,8 +140,8 @@ struct Directions: View {
             DragGesture(minimumDistance: 50)
                 .onEnded { value in
                     if value.translation.width > 50 {
-                        dirFunc.userResponse("yes")
-                        navigationState = .navigating
+                        dirFunc.userResponse("yes")   // starts navigation + audio
+                        self.currentPage = .depthMap        // switch to camera view immediately
                     } else if value.translation.width < -50 {
                         dirFunc.userResponse("no")
                     }

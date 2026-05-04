@@ -45,7 +45,7 @@ struct ContentView: View {
         case .objectDetection:
             Object_Detection()
         case .directions:
-            Directions(dirFunc: dirFunc)
+            Directions(dirFunc: dirFunc, currentPage: $currentPage)
         }
     }
 
@@ -80,8 +80,8 @@ struct ContentView: View {
 
         @State private var pulsing = false
         @State private var isHoldingMic = false
-        @State private var micScale: CGFloat = 3.0
-        @State private var ringScale: CGFloat = 3.0
+        @State private var micScale: CGFloat = 2.9
+        @State private var ringScale: CGFloat = 1.0
 
         var body: some View {
             GeometryReader { geo in
@@ -151,6 +151,7 @@ struct ContentView: View {
                         Text("VisionQuest")
                             .font(.system(size: 30, weight: .bold, design: .rounded))
                             .foregroundColor(.primary)
+                            .padding(.bottom , 128)
 
                         // MARK: — Hold-to-Record Mic Button
                         ZStack {
@@ -172,7 +173,7 @@ struct ContentView: View {
                                     color: isHoldingMic
                                         ? Color.blue.opacity(0.55)
                                         : Color.black.opacity(0.2),
-                                    radius: isHoldingMic ? 18 : 6
+                                    radius: isHoldingMic ? 18 : 12
                                 )
                                 .scaleEffect(micScale)
 
@@ -197,8 +198,9 @@ struct ContentView: View {
 
                         Text(isHoldingMic ? "Listening…" : "Hold for directions")
                             .font(.system(size: 13, weight: .medium, design: .rounded))
-                            .foregroundColor(isHoldingMic ? .green : Color(.secondaryLabel))
+                            .foregroundColor(isHoldingMic ? .blue : Color(.secondaryLabel))
                             .animation(.easeInOut(duration: 0.2), value: isHoldingMic)
+                            
                     }
                     .position(x: w / 2, y: h / 2)
                 }
@@ -218,10 +220,10 @@ struct ContentView: View {
 
         private func beginListening() {
             isHoldingMic = true
-            micScale = 1.15
+            micScale = 2.0
 
             withAnimation(.easeInOut(duration: 0.55).repeatForever(autoreverses: true)) {
-                ringScale = 1.4
+                ringScale = 2.2
             }
             
             // voice commands start
