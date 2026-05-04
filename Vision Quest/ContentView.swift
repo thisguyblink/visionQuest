@@ -16,13 +16,15 @@ enum AppPage {
 
 struct ContentView: View {
     @State private var currentPage: AppPage = .home
-    
+    @StateObject private var dirFunc = DirectionsFuncts()
+
     var body: some View {
         ZStack {
             currentScreen
-            
-            if currentPage == .home {HomeOverlay()}
-            
+
+            if currentPage == .home {
+                HomeOverlay(currentPage: $currentPage, dirFunc: dirFunc)
+            }
         }
         .animation(.easeInOut, value: currentPage)
         .simultaneousGesture(
@@ -32,7 +34,7 @@ struct ContentView: View {
                 }
         )
     }
-    
+
     @ViewBuilder
     private var currentScreen: some View {
         switch currentPage {
@@ -43,20 +45,16 @@ struct ContentView: View {
         case .objectDetection:
             Object_Detection()
         case .directions:
-            Directions()
+            Directions(dirFunc: dirFunc)
         }
     }
-    
+
     private func handleSwipe(_ value: DragGesture.Value) {
-        // get vectors
         let horizontalAmount = value.translation.width
         let verticalAmount = value.translation.height
-        
-        // amount needed to swipe
         let horizontalThreshold: CGFloat = 50
         let verticalThreshold: CGFloat = 30
         
-        // determine where to go based off currentPage and swipe
         if abs(horizontalAmount) > abs(verticalAmount) {
             if horizontalAmount < -horizontalThreshold {
                 if currentPage == .home { currentPage = .objectDetection }
@@ -73,11 +71,17 @@ struct ContentView: View {
             }
         }
     }
-    
+
     // MARK: - Home Overlay
 
     struct HomeOverlay: View {
+        @Binding var currentPage: AppPage
+        @ObservedObject var dirFunc: DirectionsFuncts
+
         @State private var pulsing = false
+        @State private var isHoldingMic = false
+        @State private var micScale: CGFloat = 3.0
+        @State private var ringScale: CGFloat = 3.0
 
         var body: some View {
             GeometryReader { geo in
@@ -92,7 +96,7 @@ struct ContentView: View {
                         SemicircleShape()
                             .fill(Color(red: 0.22, green: 0.44, blue: 0.95))
                             .shadow(color: Color(red: 0.22, green: 0.44, blue: 0.95).opacity(0.5), radius: 12)
-                            .scaleEffect(x: -1) // flip to face right
+                            .scaleEffect(x: -1)
                         Image(systemName: "arrow.left")
                             .font(.system(size: 32, weight: .heavy))
                             .foregroundColor(.white)
@@ -108,7 +112,6 @@ struct ContentView: View {
                         SemicircleShape()
                             .fill(Color(red: 0.95, green: 0.25, blue: 0.25))
                             .shadow(color: Color(red: 0.95, green: 0.25, blue: 0.25).opacity(0.5), radius: 12)
-                            .scaleEffect(x: 1)
                         Image(systemName: "arrow.right")
                             .font(.system(size: 32, weight: .heavy))
                             .foregroundColor(.white)
@@ -135,7 +138,7 @@ struct ContentView: View {
                     .accessibilityLabel("Swipe up for Directions")
 
                     // Center content
-                    VStack(spacing: 16) {
+                    VStack(spacing: 24) {
                         Circle()
                             .fill(Color(.systemGray5))
                             .frame(width: 110, height: 110)
@@ -148,17 +151,91 @@ struct ContentView: View {
                         Text("VisionQuest")
                             .font(.system(size: 30, weight: .bold, design: .rounded))
                             .foregroundColor(.primary)
+
+                        // MARK: — Hold-to-Record Mic Button
+                        ZStack {
+                            // Pulsing glow ring while recording
+                            Circle()
+                                .stroke(Color.blue.opacity(isHoldingMic ? 0.45 : 0), lineWidth: 3)
+                                .frame(width: 100, height: 100)
+                                .scaleEffect(ringScale)
+
+                            // Button body
+                            Circle()
+                                .fill(
+                                    isHoldingMic
+                                        ? Color.blue.opacity(0.9)
+                                        : Color(.systemGray4).opacity(0.85)
+                                )
+                                .frame(width: 72, height: 72)
+                                .shadow(
+                                    color: isHoldingMic
+                                        ? Color.blue.opacity(0.55)
+                                        : Color.black.opacity(0.2),
+                                    radius: isHoldingMic ? 18 : 6
+                                )
+                                .scaleEffect(micScale)
+
+                            Image(systemName: isHoldingMic ? "mic.fill" : "mic")
+                                .font(.system(size: 28, weight: .semibold))
+                                .foregroundColor(isHoldingMic ? .white : .primary)
+                                .scaleEffect(micScale)
+                        }
+                        .animation(.spring(response: 0.25, dampingFraction: 0.6), value: micScale)
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { _ in
+                                    guard !isHoldingMic else { return }
+                                    beginListening()
+                                }
+                                .onEnded { _ in
+                                    guard isHoldingMic else { return }
+                                    finishListeningAndNavigate()
+                                }
+                        )
+                        .accessibilityLabel("Hold to speak a destination, release to navigate")
+
+                        Text(isHoldingMic ? "Listening…" : "Hold for directions")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundColor(isHoldingMic ? .green : Color(.secondaryLabel))
+                            .animation(.easeInOut(duration: 0.2), value: isHoldingMic)
                     }
                     .position(x: w / 2, y: h / 2)
                 }
             }
             .ignoresSafeArea()
-            .allowsHitTesting(false)
+            .allowsHitTesting(true)
             .onAppear {
                 withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
                     pulsing = true
                 }
+                // set up location when user presses mic
+                dirFunc.setupLocation()
             }
+        }
+
+        // MARK: — Mic helpers
+
+        private func beginListening() {
+            isHoldingMic = true
+            micScale = 1.15
+
+            withAnimation(.easeInOut(duration: 0.55).repeatForever(autoreverses: true)) {
+                ringScale = 1.4
+            }
+            
+            // voice commands start
+            dirFunc.startListening()
+        }
+
+        private func finishListeningAndNavigate() {
+            isHoldingMic = false
+            micScale = 1.0
+            // Resetting ringScale stops the repeating animation on its next cycle
+            withAnimation(.default) { ringScale = 1.0 }
+
+            // Switch to Directions 
+            currentPage = .directions
         }
     }
 

@@ -11,14 +11,12 @@ import CoreLocation
 import GoogleMaps
 
 struct Directions: View {
-    @StateObject private var dirFunc = DirectionsFuncts()
+    // Injected from ContentView so state is shared with the home mic button
+    @ObservedObject var dirFunc: DirectionsFuncts
     @StateObject private var speech = SpeechFuncts()
     @State private var isListening = false
     @State private var navigationState: NavState = .idle
-    
 
-
-    // swipe feature
     enum NavState {
         case idle
         case searching
@@ -27,10 +25,7 @@ struct Directions: View {
     }
 
     var body: some View {
-        
-        
         ZStack {
-            
             // Map Layer
             if let mapView = dirFunc.mapView {
                 GoogleMapView(mapView: mapView)
@@ -38,22 +33,21 @@ struct Directions: View {
             } else {
                 Color.black.ignoresSafeArea()
             }
-            
+
             // UI Overlay
             VStack {
                 Spacer()
-                
+
                 switch navigationState {
-                    
                 case .idle:
                     micButton
-                    
+
                 case .searching:
                     statusCard(icon: "magnifyingglass", message: "Searching...")
-                    
+
                 case .confirming:
                     swipeCard
-                    
+
                 case .navigating:
                     navigationCard
                 }
@@ -61,21 +55,30 @@ struct Directions: View {
             .padding(.bottom, 40)
         }
         .onAppear {
+            // If the home mic button already started a search, jump straight
+            // to the right state; otherwise start fresh in idle.
             dirFunc.setupLocation()
-            
+
             dirFunc.onResultReady = {
                 isListening = false
                 navigationState = .confirming
             }
-            
+
             dirFunc.onNavigationStart = {
                 isListening = false
                 navigationState = .navigating
             }
-            
+
             dirFunc.onNavigationEnd = {
                 isListening = false
                 navigationState = .idle
+            }
+
+            // If dirFunc is already mid-search (triggered from the home mic),
+            // reflect that in the UI immediately.
+            if !dirFunc.recognizedSpeech.isEmpty || dirFunc.debugMessage == "Listening..." {
+                isListening = true
+                navigationState = .searching
             }
         }
     }
@@ -86,7 +89,6 @@ struct Directions: View {
             isListening = true
             navigationState = .searching
             dirFunc.startListening()
-        
         } label: {
             VStack(spacing: 12) {
                 Image(systemName: isListening ? "mic.fill" : "mic")
@@ -112,27 +114,16 @@ struct Directions: View {
                 .foregroundColor(.white.opacity(0.7))
 
             HStack(spacing: 20) {
-                // Decline
-                swipeActionButton(
-                    icon: "xmark",
-                    label: "No",
-                    color: .red
-                ) {
+                swipeActionButton(icon: "xmark", label: "No", color: .red) {
                     dirFunc.userResponse("no")
                 }
 
-                // Accept
-                swipeActionButton(
-                    icon: "checkmark",
-                    label: "Yes",
-                    color: .green
-                ) {
+                swipeActionButton(icon: "checkmark", label: "Yes", color: .green) {
                     dirFunc.userResponse("yes")
                     navigationState = .navigating
                 }
             }
 
-            // Cancel option
             Button("Cancel") {
                 dirFunc.userResponse("cancel")
                 navigationState = .idle
@@ -149,11 +140,9 @@ struct Directions: View {
             DragGesture(minimumDistance: 50)
                 .onEnded { value in
                     if value.translation.width > 50 {
-                        // Swipe right = Yes
                         dirFunc.userResponse("yes")
                         navigationState = .navigating
                     } else if value.translation.width < -50 {
-                        // Swipe left = No (next result)
                         dirFunc.userResponse("no")
                     }
                 }
@@ -233,4 +222,3 @@ struct GoogleMapView: UIViewRepresentable {
     func makeUIView(context: Context) -> GMSMapView { mapView }
     func updateUIView(_ uiView: GMSMapView, context: Context) {}
 }
-
