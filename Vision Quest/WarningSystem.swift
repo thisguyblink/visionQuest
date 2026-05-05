@@ -9,35 +9,42 @@ import Foundation
 import QuartzCore
 
 class WarningSystem : ObservableObject {
-    private var lidarManager = DepthCameraManager()
-    private var objectManager = ObjectDetectionViewModel(visual: false)
+    private var lidarManager : DepthCameraManager
+//    private var objectManager = ObjectDetectionViewModel(visual: false) lidar manager handles image cycle
     private var speechManager = SpeechFuncts()
     private var currentTime: Double
     private let cyclesPerSecond: Int = 5
     private var screenSize: CGSize = .zero
     private let warningDistance = Float(2.0)
-    var running = false
+    @Published var running = false
     
     @Published var spokenMessage: String = ""
     
-    init() {
+    init(lidarManager: DepthCameraManager) {
+        self.lidarManager = lidarManager
         currentTime = CACurrentMediaTime()
-        lidarManager.start()
     }
     
     func startWarningSystem() {
         running = true
-        DispatchQueue.main.async {
-            self.logicLoop()
-        }
+        scheduleLoop()
     }
     
     func stopWarningSystem() {
         running = false
     }
     
+    private func scheduleLoop() {
+            guard running else { return }
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 1.0 / Double(cyclesPerSecond)) { [weak self] in
+                guard let self = self, self.running else { return }
+                self.logicLoop()
+                self.scheduleLoop()  // reschedule
+            }
+        }
+    
     private func logicLoop() {
-        screenSize = objectManager.bufferSize
+        screenSize = lidarManager.objectDetection.bufferSize // lidar --> object detection 
         if screenSize == .zero {
             fatalError("Screen size not recieved from Object Detection View Model")
         }
@@ -45,9 +52,9 @@ class WarningSystem : ObservableObject {
         let maxRow = Int(screenSize.height) * 3 / 4
         let minCol = Int(screenSize.width) / 4
         let maxCol = Int(screenSize.width) * 3 / 4
-        while running {
             if ( CACurrentMediaTime() - currentTime) >= 1/Double(cyclesPerSecond) {
-                let objects = objectManager.getObjectDetectionDataList() // dimensions grabbed in bufferSize
+                // lidar --> object detection
+                let objects = lidarManager.objectDetection.getObjectDetectionDataList() // dimensions grabbed in bufferSize
                 let lidarData = lidarManager.latestDepthGrid // dimesions 192H x 256 W
                 let scaledLidar = scaleLidarToScreen(grid: lidarData)
                 let depthValue = scaledLidar.values
@@ -85,7 +92,6 @@ class WarningSystem : ObservableObject {
             } else {
                 print("Processing time faster than cycle speed")
             }
-        }
     }
     
     private func scaleLidarToScreen(grid: DepthGrid) -> DepthGrid {

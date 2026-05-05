@@ -13,16 +13,26 @@ struct DepthGrid {          // <-- top level, NOT inside any class
 
 class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
     
-    let session = ARSession()
+        let session = ARSession()
+        lazy var objectDetection = ObjectDetectionViewModel(session: session, visual: false)
+        private var frameCount = 0
+        private var totalProcessingTime: Double = 0
         
         @Published var latestDepthGrid: DepthGrid
         @Published var isRunning = false
+    
+        private var visionRequests = [VNRequest]()
+        private var isProcessingFrame: Bool = false
+        private let processingQueue = DispatchQueue(label: "depth.processing", qos: .userInitiated)
+        
         
     override init() {
         self.latestDepthGrid = DepthGrid(values: [], width: 0, height: 0, maxDepth: 0, minDepth: 0)
         super.init()
         session.delegate = self
         self.latestDepthGrid = buildMockGrid()  // replace with mock after init
+        print("DEBUG [DepthCameraManager]: init — \(Thread.callStackSymbols.prefix(6).joined(separator: "\n"))")
+
     }
     
     func start() {
@@ -35,17 +45,61 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
         config.frameSemantics = .sceneDepth
         session.run(config)
         isRunning = true
+        print("DEBUG [DepthCameraManager]: start() called — \(Thread.callStackSymbols.prefix(6).joined(separator: "\n"))")
+
     }
+    
+    func setupVisionRequest(with requests: [VNRequest]) {
+           visionRequests = requests
+       }
+       
+    private func runVisionRequest(on pixelBuffer: CVPixelBuffer) {
+           guard !visionRequests.isEmpty else { return }
+           let handler = VNImageRequestHandler(
+               cvPixelBuffer: pixelBuffer,
+               orientation: .right,  // ARKit frames are landscape
+               options: [:]
+           )
+           do {
+               try handler.perform(visionRequests)
+           } catch {
+               print("❌ Vision error: \(error)")
+           }
+       }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        guard let depth = frame.smoothedSceneDepth ?? frame.sceneDepth else {
-            print("❌ No depth data in frame")
+        if frameCount % 5 != 0 {
             return
         }
-        
-        let grid = buildGrid(from: depth.depthMap, confidence: depth.confidenceMap)
-        DispatchQueue.main.async {
-            self.latestDepthGrid = grid
+        isProcessingFrame = true
+        let startTime = CACurrentMediaTime()
+        let colorBuffer    = frame.capturedImage
+        let depthMap       = (frame.smoothedSceneDepth ?? frame.sceneDepth)?.depthMap
+        let confidenceMap  = (frame.smoothedSceneDepth ?? frame.sceneDepth)?.confidenceMap
+
+        processingQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            // Run object detection on color frame
+            self.runVisionRequest(on: colorBuffer)
+
+            // Build depth grid if available
+            if let depthMap = depthMap {
+                let grid = self.buildGrid(from: depthMap, confidence: confidenceMap)
+                DispatchQueue.main.async {
+                    self.latestDepthGrid = grid
+                }
+            }
+            let elapsed = CACurrentMediaTime() - startTime
+                    self.frameCount += 1
+                    self.totalProcessingTime += elapsed
+                    let average = self.totalProcessingTime / Double(self.frameCount)
+
+                    print(String(format: "⏱ Frame %d: %.1fms | avg: %.1fms",
+                                 self.frameCount,
+                                 elapsed * 1000,
+                                 average * 1000))
+            self.isProcessingFrame = false
         }
     }
     
