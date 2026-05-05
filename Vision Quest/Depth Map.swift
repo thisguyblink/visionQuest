@@ -48,7 +48,6 @@ struct Depth_Map: View {
                 }
                 .frame(maxWidth: .infinity)
                 .aspectRatio(CGFloat(grid.width) / CGFloat(grid.height), contentMode: .fit)
-                .rotationEffect(.degrees(90)) 
                 .cornerRadius(12)
                 .padding(.horizontal)
 

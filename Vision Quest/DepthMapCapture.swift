@@ -115,9 +115,18 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
                     grid[row][col] = depthPointer[index]
                 }
             }
-            
-            return DepthGrid(values: grid, width: width, height: height, maxDepth: MaxDepth, minDepth: MinDepth)
+        
+        var rotated = Array(repeating: Array(repeating: Float(0), count: height), count: width)
+           for row in 0..<height {
+               for col in 0..<width {
+                   rotated[col][height - 1 - row] = grid[row][col]
+               }
+           }
+        
+            // need to flip height and width since the data shape is orginally landscape and needs to be vertical to match the input
+            return DepthGrid(values: rotated, width: height, height: width, maxDepth: MaxDepth, minDepth: MinDepth)
         }
+
     
     func buildMockGrid() -> DepthGrid {
         let width = 256
