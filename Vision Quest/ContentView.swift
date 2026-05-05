@@ -19,6 +19,7 @@ struct ContentView: View {
     @StateObject private var dirFunc = DirectionsFuncts()
 
     var body: some View {
+        
         ZStack {
             currentScreen
 
