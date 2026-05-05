@@ -6,9 +6,9 @@
 //
 
 import Foundation
-import SwiftUI
+import QuartzCore
 
-class WarningSystem {
+class WarningSystem : ObservableObject {
     private var lidarManager = DepthCameraManager()
     private var objectManager = ObjectDetectionViewModel(visual: false)
     private var speechManager = SpeechFuncts()
@@ -17,6 +17,8 @@ class WarningSystem {
     private var screenSize: CGSize = .zero
     private let warningDistance = Float(2.0)
     var running = false
+    
+    @Published var spokenMessage: String = ""
     
     init() {
         currentTime = CACurrentMediaTime()
@@ -45,9 +47,9 @@ class WarningSystem {
         let maxCol = Int(screenSize.width) * 3 / 4
         while running {
             if ( CACurrentMediaTime() - currentTime) >= 1/Double(cyclesPerSecond) {
-                var objects = objectManager.getObjectDetectionDataList() // dimensions grabbed in bufferSize
-                var lidarData = lidarManager.latestDepthGrid // dimesions 192H x 256 W
-                var scaledLidar = scaleLidarToScreen(grid: lidarData)
+                let objects = objectManager.getObjectDetectionDataList() // dimensions grabbed in bufferSize
+                let lidarData = lidarManager.latestDepthGrid // dimesions 192H x 256 W
+                let scaledLidar = scaleLidarToScreen(grid: lidarData)
                 let depthValue = scaledLidar.values
                 var type: String = "None"
                 var minDistance: Float = Float(5.0)
@@ -118,7 +120,9 @@ class WarningSystem {
         }
             let output = "\(type) in \(distance) meters"
             DispatchQueue.main.async {
+                self.spokenMessage = output
                 self.speechManager.speak(output)
             }
         }
+    
 }

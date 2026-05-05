@@ -18,10 +18,12 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
         @Published var latestDepthGrid: DepthGrid
         @Published var isRunning = false
         
-        override init() {
-            super.init()
-            session.delegate = self
-        }
+    override init() {
+        self.latestDepthGrid = DepthGrid(values: [], width: 0, height: 0, maxDepth: 0, minDepth: 0)
+        super.init()
+        session.delegate = self
+        self.latestDepthGrid = buildMockGrid()  // replace with mock after init
+    }
     
     func start() {
         guard ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) else {

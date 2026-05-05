@@ -22,6 +22,9 @@ struct ContentView: View {
                 NavigationLink(destination: Directions()) {
                     Text("Direction Page")
                 }
+                NavigationLink(destination: WarningSystemView()) {
+                    Text("Warning Syste View")
+                }
             }
         }
     }

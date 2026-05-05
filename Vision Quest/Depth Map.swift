@@ -6,7 +6,7 @@ struct Depth_Map: View {
         
     var body: some View {
         VStack(spacing: 16) {
-            if let grid = manager.latestDepthGrid {
+            let grid = manager.latestDepthGrid
                 
                 HStack {
                     Label(String(format: "%.2fm", grid.minDepth), systemImage: "arrow.down")
@@ -54,18 +54,6 @@ struct Depth_Map: View {
                 Text("Grid: \(grid.width) × \(grid.height)")
                     .font(.caption2)
                     .foregroundColor(.secondary)
-
-            } else {
-                // Show placeholder until a button is pressed
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.gray.opacity(0.15))
-                    .frame(maxWidth: .infinity)
-                    .aspectRatio(256.0 / 192.0, contentMode: .fit)
-                    .padding(.horizontal)
-                    .overlay(Text("Press Start or Mock to capture")
-                        .foregroundColor(.secondary)
-                        .font(.caption))
-            }
 
             // Buttons
             HStack(spacing: 12) {
