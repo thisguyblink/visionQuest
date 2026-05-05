@@ -12,21 +12,20 @@ import CoreML
 
 // MARK: - ViewModel
 
-class ObjectDetectionViewModel: NSObject, ObservableObject, ARSessionDelegate {
+class ObjectDetectionViewModel: NSObject, ObservableObject {
     
     private let session: ARSession
     let detectionOverlay = CALayer()
     var bufferSize: CGSize = CGSize(width: 1920, height: 1440) // ARKit default
     var objectDetectionDataList = [ObjectDetectionData]()
     
-    private var requests = [VNRequest]()
+    var requests: [VNRequest] = []
     private var isProcessingFrame = false
     private let processingQueue = DispatchQueue(label: "VideoDataOutput", qos: .userInitiated)
     
     init(session: ARSession, visual: Bool) {
         self.session = session
         super.init()
-        session.delegate = self
         setupVisionRequest(visual: visual)
 //        startARSession() session is owned by depth map capture 
     }
@@ -47,53 +46,52 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, ARSessionDelegate {
     private func setupVisionRequest(visual: Bool) {
         do {
             let visionModel = try VNCoreMLModel(for: best().model)
-            let objectRecognition = VNCoreMLRequest(model: visionModel) { [weak self] request, error in
+
+            let request = VNCoreMLRequest(model: visionModel) { [weak self] request, error in
+                guard let self = self else { return }
+
                 if let error = error {
-                    print("DEBUG [VNCoreMLRequest]: error — \(error)")
+                    print("Vision error: \(error)")
                     return
                 }
+
                 DispatchQueue.main.async {
-                    if let results = request.results {
-                        if visual {
-                            self?.drawVisionRequestResults(results)
-                        } else {
-                            self?.makeBoundaryBoxes(results)
-                        }
+                    guard let results = request.results else { return }
+
+                    if visual {
+                        self.drawVisionRequestResults(results)
+                    } else {
+                        self.makeBoundaryBoxes(results)
                     }
                 }
             }
-            requests = [objectRecognition]
+
+            request.imageCropAndScaleOption = .scaleFill
+
+            self.requests = [request]
+
         } catch {
-            print("DEBUG [setupVisionRequest]: FAILED — \(error)")
+            print("Failed to setup Vision: \(error)")
         }
     }
     
-    // MARK: - ARSession Delegate
-    
-    func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        guard !isProcessingFrame else { return }
-        isProcessingFrame = true
-        
-        let colorBuffer = frame.capturedImage
-        let width  = CVPixelBufferGetWidth(colorBuffer)
-        let height = CVPixelBufferGetHeight(colorBuffer)
-        bufferSize = CGSize(width: width, height: height)
-        
-        processingQueue.async { [weak self] in
-            guard let self = self else { return }
-            let handler = VNImageRequestHandler(
-                cvPixelBuffer: colorBuffer,
-                orientation: .right,  // ARKit frames are landscape
-                options: [:]
-            )
-            do {
-                try handler.perform(self.requests)
-            } catch {
-                print("DEBUG [ARFrame]: vision error — \(error)")
-            }
-            self.isProcessingFrame = false
+    func runVisionRequest(on pixelBuffer: CVPixelBuffer) {
+        guard !requests.isEmpty else { return }
+        print("Running Vision on frame")
+        let handler = VNImageRequestHandler(
+            cvPixelBuffer: pixelBuffer,
+            orientation: .right,
+            options: [:]
+        )
+
+        do {
+            try handler.perform(requests)
+        } catch {
+            print("Vision error: \(error)")
         }
+        
     }
+    
     
     // MARK: - Boundary Boxes (data only)
     
@@ -127,6 +125,7 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, ARSessionDelegate {
                 type:        type
             ))
         }
+        print("Detected objects: \(objectDetectionDataList.count)")
     }
     
     func getObjectDetectionDataList() -> [ObjectDetectionData] {

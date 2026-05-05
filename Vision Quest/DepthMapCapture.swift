@@ -1,6 +1,8 @@
 import Foundation
 import ARKit
 import SwiftUI
+import UIKit
+import Photos
 
 
 struct DepthGrid {          // <-- top level, NOT inside any class
@@ -21,9 +23,11 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
         @Published var latestDepthGrid: DepthGrid
         @Published var isRunning = false
     
-        private var visionRequests = [VNRequest]()
+        
         private var isProcessingFrame: Bool = false
         private let processingQueue = DispatchQueue(label: "depth.processing", qos: .userInitiated)
+    
+        private(set) var latestColorBuffer: CVPixelBuffer?
         
         
     override init() {
@@ -31,7 +35,6 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
         super.init()
         session.delegate = self
         self.latestDepthGrid = buildMockGrid()  // replace with mock after init
-        print("DEBUG [DepthCameraManager]: init — \(Thread.callStackSymbols.prefix(6).joined(separator: "\n"))")
 
     }
     
@@ -45,43 +48,29 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
         config.frameSemantics = .sceneDepth
         session.run(config)
         isRunning = true
-        print("DEBUG [DepthCameraManager]: start() called — \(Thread.callStackSymbols.prefix(6).joined(separator: "\n"))")
-
-    }
     
-    func setupVisionRequest(with requests: [VNRequest]) {
-           visionRequests = requests
-       }
+    }
        
-    private func runVisionRequest(on pixelBuffer: CVPixelBuffer) {
-           guard !visionRequests.isEmpty else { return }
-           let handler = VNImageRequestHandler(
-               cvPixelBuffer: pixelBuffer,
-               orientation: .right,  // ARKit frames are landscape
-               options: [:]
-           )
-           do {
-               try handler.perform(visionRequests)
-           } catch {
-               print("❌ Vision error: \(error)")
-           }
-       }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        if frameCount % 5 != 0 {
-            return
-        }
+        frameCount += 1 
+        guard frameCount % 5 == 0 else { return }
         isProcessingFrame = true
         let startTime = CACurrentMediaTime()
         let colorBuffer    = frame.capturedImage
+        latestColorBuffer = colorBuffer
         let depthMap       = (frame.smoothedSceneDepth ?? frame.sceneDepth)?.depthMap
         let confidenceMap  = (frame.smoothedSceneDepth ?? frame.sceneDepth)?.confidenceMap
-
+        guard depthMap != nil else {
+                print("❌ No depth map in frame \(frameCount)")
+                isProcessingFrame = false
+                return
+            }
         processingQueue.async { [weak self] in
             guard let self = self else { return }
 
             // Run object detection on color frame
-            self.runVisionRequest(on: colorBuffer)
+            self.objectDetection.runVisionRequest(on: colorBuffer)
 
             // Build depth grid if available
             if let depthMap = depthMap {
@@ -91,7 +80,6 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
                 }
             }
             let elapsed = CACurrentMediaTime() - startTime
-                    self.frameCount += 1
                     self.totalProcessingTime += elapsed
                     let average = self.totalProcessingTime / Double(self.frameCount)
 
@@ -211,6 +199,77 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
         
         return DepthGrid(values: grid, width: width, height: height,
                          maxDepth: maxDepth, minDepth: minDepth)
+    }
+    
+    func exportSnapshot(depthGrid: DepthGrid) {
+        guard let colorBuffer = latestColorBuffer else {
+            print("❌ No color frame available")
+            return
+        }
+        
+        // Convert color buffer to UIImage
+        let ciImage = CIImage(cvPixelBuffer: colorBuffer)
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+            print("❌ Could not create CGImage")
+            return
+        }
+        let colorImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
+        
+        // Convert depth grid to UIImage
+        let depthImage = renderDepthGrid(depthGrid)
+        
+        // Save both to photo library
+        PHPhotoLibrary.requestAuthorization { status in
+            guard status == .authorized else {
+                print("❌ Photo library access denied")
+                return
+            }
+            PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.creationRequestForAsset(from: colorImage)
+                PHAssetChangeRequest.creationRequestForAsset(from: depthImage)
+            } completionHandler: { success, error in
+                if success {
+                    print("✅ Exported color + depth images")
+                } else if let error = error {
+                    print("❌ Export error: \(error)")
+                }
+            }
+        }
+    }
+
+    private func renderDepthGrid(_ grid: DepthGrid) -> UIImage {
+        let width  = grid.width
+        let height = grid.height
+        let size   = CGSize(width: width, height: height)
+        
+        UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
+        guard let ctx = UIGraphicsGetCurrentContext() else {
+            UIGraphicsEndImageContext()
+            return UIImage()
+        }
+        
+        for row in 0..<height {
+            for col in 0..<width {
+                let val = grid.values[row][col]
+                let color: UIColor
+                if val == -1 {
+                    color = .gray
+                } else {
+                    let normalized = min(max(CGFloat(val / grid.maxDepth), 0.0), 1.0)
+                    color = UIColor(hue: (1.0 - normalized) * 0.66,
+                                    saturation: 0.9,
+                                    brightness: 0.9,
+                                    alpha: 1.0)
+                }
+                ctx.setFillColor(color.cgColor)
+                ctx.fill(CGRect(x: col, y: row, width: 1, height: 1))
+            }
+        }
+        
+        let image = UIGraphicsGetImageFromCurrentImageContext() ?? UIImage()
+        UIGraphicsEndImageContext()
+        return image
     }
         
 }

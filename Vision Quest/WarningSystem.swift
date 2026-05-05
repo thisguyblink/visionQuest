@@ -14,6 +14,11 @@ class WarningSystem : ObservableObject {
     private var speechManager = SpeechFuncts()
     private var currentTime: Double
     private let cyclesPerSecond: Int = 5
+    private let warningCooldown: Double = 3.0
+    private var lastSpokenMessage: String = ""
+    private var lastWarningTime: Double = 0
+    private let warningQueue = DispatchQueue(label: "warning.loop", qos: .utility)  // lower priority than userInitiated
+
     private var screenSize: CGSize = .zero
     private let warningDistance = Float(2.0)
     @Published var running = false
@@ -36,11 +41,11 @@ class WarningSystem : ObservableObject {
     
     private func scheduleLoop() {
             guard running else { return }
-            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 1.0 / Double(cyclesPerSecond)) { [weak self] in
-                guard let self = self, self.running else { return }
-                self.logicLoop()
-                self.scheduleLoop()  // reschedule
-            }
+            warningQueue.asyncAfter(deadline: .now() + 1.0 / Double(cyclesPerSecond)) { [weak self] in
+                    guard let self = self, self.running else { return }
+                    self.logicLoop()
+                    self.scheduleLoop()
+                }
         }
     
     private func logicLoop() {
@@ -63,17 +68,25 @@ class WarningSystem : ObservableObject {
                 for object in objects {
                     // only check import object types
                     if object.type == "hazard" || object.type == "object" {
+                        print("Hazard or Object Detected")
                         var startRow = Int(object.topLeft.y)
                         var endRow   = Int(object.bottomLeft.y)
                         var startCol = Int(object.topLeft.x)
-                        var endCol   = Int(object.bottomRight.x)
-                        // reduce search to middle .75 of screen
-                        startRow = max(startRow, minRow)
-                        endRow   = min(endRow, maxRow)
-                        startCol = max(startCol, minCol)
-                        endCol   = min(endCol, maxCol)
+                        var endCol   = Int(object.topRight.x)
+                        
+                        startRow = max(minRow, startRow)
+                        endRow   = min(maxRow, endRow)
+                        startCol = max(minCol, startCol)
+                        endCol   = min(maxCol, endCol)
+                        
                         let rowRange = startRow...endRow
                         let colRange = startCol...endCol
+                        
+                        guard startRow < endRow, startCol < endCol else {
+                            print("DEBUG [logicLoop]: skipping object — invalid range")
+                            continue
+                        }
+                        
                         // start search for closest hazard
                         for row in rowRange {
                             for col in colRange {
@@ -87,7 +100,13 @@ class WarningSystem : ObservableObject {
                     }
                 }
                 // send warning to be spoken
-                sendWarning(type: type, distance: minDistance)
+                if type != "None" {
+                    let grid = lidarManager.latestDepthGrid
+                        DispatchQueue.global(qos: .background).async {
+                            self.lidarManager.exportSnapshot(depthGrid: grid)
+                        }
+                    sendWarning(type: type, distance: minDistance)
+                }
                 
             } else {
                 print("Processing time faster than cycle speed")
@@ -121,10 +140,16 @@ class WarningSystem : ObservableObject {
     }
     
     func sendWarning(type: String, distance: Float) {
-        if type == "None" {
+        let now = CACurrentMediaTime()
+        let output = "\(type) in \(distance) meters"
+        
+        guard output != lastSpokenMessage || (now - lastWarningTime) >= warningCooldown else {
             return
         }
-            let output = "\(type) in \(distance) meters"
+                
+        lastWarningTime = now
+        lastSpokenMessage = output
+        
             DispatchQueue.main.async {
                 self.spokenMessage = output
                 self.speechManager.speak(output)
