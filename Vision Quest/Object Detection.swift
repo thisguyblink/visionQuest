@@ -17,29 +17,32 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
     let session = AVCaptureSession()
     let detectionOverlay = CALayer()
     var bufferSize: CGSize = .zero
+    var objectDetectionDataList = [ObjectDetectionData]()
     
     private var videoDataOutput = AVCaptureVideoDataOutput()
     private var requests = [VNRequest]()
     private let videoDataOutputQueue = DispatchQueue(label: "VideoDataOutput", qos: .userInitiated)
     
-    override init() {
+    init(visual: Bool) {
         super.init()
-        setupAll()
+        setupAll(visual: visual)
     }
     
     // MARK: - Setup
     
-    func setupAll() {
+    func setupAll(visual: Bool) {
         guard let videoDevice = discoverCamera() else {
             return
         }
         setupCaptureSession(videoDevice: videoDevice)
-        setupVisionRequest()
+        setupVisionRequest(visual: visual)
         
         DispatchQueue.global(qos: .userInitiated).async {
                 self.session.startRunning()
             }
     }
+    
+    
     
     private func discoverCamera() -> AVCaptureDevice? {
         let devices = AVCaptureDevice.DiscoverySession(
@@ -90,7 +93,7 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
         session.commitConfiguration()
     }
     
-    private func setupVisionRequest() {
+    private func setupVisionRequest(visual: Bool) {
         do {
             let visionModel = try VNCoreMLModel(for: best().model)
             
@@ -99,10 +102,14 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
                     print("DEBUG [VNCoreMLRequest]: error — \(error)")
                     return
                 }
-                let count = request.results?.count ?? 0
                 DispatchQueue.main.async {
                     if let results = request.results {
-                        self?.drawVisionRequestResults(results)
+                        if visual {
+                            self?.drawVisionRequestResults(results)
+                        } else {
+                            self?.makeBoundaryBoxes(results)
+                        }
+                        
                     }
                 }
             }
@@ -144,6 +151,82 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
         }
     }
     
+    // Object detection with data only for Warning System
+    
+    private func makeBoundaryBoxes(_ results: [VNObservation])  {
+        
+        guard let observation = results.first as? VNCoreMLFeatureValueObservation,
+              let multiArray = observation.featureValue.multiArrayValue else {
+            return
+        }
+        
+        let numDetections = multiArray.shape[1].intValue  // 300
+        let confidenceThreshold: Float = 0.3
+        var boxesDrawn = 0
+        // remove all previous object detections from list
+        objectDetectionDataList.removeAll()
+        for i in 0..<numDetections {
+            let confidence = multiArray[[0, i as NSNumber, 4]].floatValue
+            guard confidence >= confidenceThreshold else { continue }
+            
+            let xCenter  = multiArray[[0, i as NSNumber, 0]].floatValue
+            let yCenter  = multiArray[[0, i as NSNumber, 1]].floatValue
+            let width    = multiArray[[0, i as NSNumber, 2]].floatValue
+            let height   = multiArray[[0, i as NSNumber, 3]].floatValue
+            let classId  = Int(multiArray[[0, i as NSNumber, 5]].floatValue)
+            var type = "default"
+            switch classId {
+            case 0:
+                type = "hazard"
+            case 1:
+                type = "object"
+            case 2:
+                type = "opening"
+            case 3:
+                type = "signage"
+            case 4:
+                type = "transition"
+            default:
+                type = "default"
+            }
+            
+            
+            // Convert from center format to pixel coords
+            
+            // Convert from model pixel space to 0-1 normalized
+            let modelInputSize: CGFloat = 640.0
+            
+            let normalizedRect = CGRect(
+                x: CGFloat(xCenter - width / 2) / modelInputSize,
+                y: 1.0 - CGFloat(yCenter + height / 2) / modelInputSize,  // flip Y here
+                width: CGFloat(width) / modelInputSize,
+                height: CGFloat(height) / modelInputSize
+            ).clamped
+            
+            let scaledRect = CGRect(
+                x: normalizedRect.minX * bufferSize.width,
+                y: normalizedRect.minY * bufferSize.height,
+                width: normalizedRect.width * bufferSize.width,
+                height: normalizedRect.height * bufferSize.height
+            )
+            
+            let objectDetectionData = ObjectDetectionData(
+                topLeft:     CGPoint(x: scaledRect.minX, y: scaledRect.minY),
+                topRight:    CGPoint(x: scaledRect.maxX, y: scaledRect.minY),
+                bottomLeft:  CGPoint(x: scaledRect.minX, y: scaledRect.maxY),
+                bottomRight: CGPoint(x: scaledRect.maxX, y: scaledRect.maxY),
+                type:        type
+            )
+            objectDetectionDataList.append(objectDetectionData)
+            
+        }
+    }
+    
+    func getObjectDetectionDataList() -> [ObjectDetectionData] {
+        return objectDetectionDataList
+    }
+    
+    
     // MARK: - Drawing
     
     private func drawVisionRequestResults(_ results: [VNObservation]) {
@@ -156,7 +239,7 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
         }
         
         let numDetections = multiArray.shape[1].intValue  // 300
-        let numValues     = multiArray.shape[2].intValue  // 6
+//        let numValues     = multiArray.shape[2].intValue  // 6
         let confidenceThreshold: Float = 0.3
         var boxesDrawn = 0
         
@@ -258,7 +341,7 @@ class ObjectDetectionViewModel: NSObject, ObservableObject, AVCaptureVideoDataOu
 
 struct Object_Detection: View {
     
-    @StateObject private var vm = ObjectDetectionViewModel()
+    @StateObject private var vm = ObjectDetectionViewModel(visual: true)
     
     var body: some View {
         let _ = print("DEBUG [body]: rendered — session running: \(vm.session.isRunning), inputs: \(vm.session.inputs.count)")

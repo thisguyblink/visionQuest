@@ -15,7 +15,7 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
     
     let session = ARSession()
         
-        @Published var latestDepthGrid: DepthGrid?
+        @Published var latestDepthGrid: DepthGrid
         @Published var isRunning = false
         
         override init() {
@@ -36,12 +36,11 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
     }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        print("📸 Frame received")  // add this
         guard let depth = frame.smoothedSceneDepth ?? frame.sceneDepth else {
             print("❌ No depth data in frame")
             return
         }
-        print("✅ Depth data found")
+        
         let grid = buildGrid(from: depth.depthMap, confidence: depth.confidenceMap)
         DispatchQueue.main.async {
             self.latestDepthGrid = grid
@@ -129,8 +128,8 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
 
     
     func buildMockGrid() -> DepthGrid {
-        let width = 256
-        let height = 192
+        let width = 192
+        let height = 256
         var grid = Array(repeating: Array(repeating: Float(0), count: width), count: height)
         
         var maxDepth: Float = 0
