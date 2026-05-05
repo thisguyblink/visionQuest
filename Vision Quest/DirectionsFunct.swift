@@ -85,7 +85,7 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
 
             let distance = userLoc.distance(from: stepLoc)
             // within 20 meters of the next step, load the next one
-            if distance < 20 {
+            if distance < 10 {
                 if currentStepIx < navigationSteps.count - 1{
                     currentStepIx += 1
                     loadNextStep()
