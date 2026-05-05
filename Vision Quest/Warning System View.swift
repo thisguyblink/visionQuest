@@ -24,6 +24,7 @@ struct WarningSystemView: View {
             Button(action: {
                 if !warningSystem.running {
                     warningSystem.startWarningSystem()
+                    print("warning system has started")
                 } else {
                     warningSystem.stopWarningSystem()
                 }

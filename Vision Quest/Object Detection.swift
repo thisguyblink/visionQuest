@@ -114,18 +114,28 @@ class ObjectDetectionViewModel: NSObject, ObservableObject {
             let classId = Int(multiArray[[0, i as NSNumber, 5]].floatValue)
             let type    = classLabel(for: classId)
             
-            let scaledRect = toScaledRect(xCenter: xCenter, yCenter: yCenter,
-                                          width: width, height: height)
+            
+            let modelInputSize: Float = 640.0
+
+
+            var minX = (xCenter - width / 2) / modelInputSize
+            var maxX = (xCenter + width / 2) / modelInputSize
+            var minY = (yCenter - height / 2) / modelInputSize
+            var maxY = (yCenter + height / 2) / modelInputSize
+            
+            minX = max(0, min(1, minX))
+            maxX = max(0, min(1, maxX))
+            minY = max(0, min(1, minY))
+            maxY = max(0, min(1, maxY))
             
             objectDetectionDataList.append(ObjectDetectionData(
-                topLeft:     CGPoint(x: scaledRect.minX, y: scaledRect.minY),
-                topRight:    CGPoint(x: scaledRect.maxX, y: scaledRect.minY),
-                bottomLeft:  CGPoint(x: scaledRect.minX, y: scaledRect.maxY),
-                bottomRight: CGPoint(x: scaledRect.maxX, y: scaledRect.maxY),
-                type:        type
+                minX: minX,
+                maxX: maxX,
+                minY: minY,
+                maxY: maxY,
+                type: type
             ))
         }
-        print("Detected objects: \(objectDetectionDataList.count)")
     }
     
     func getObjectDetectionDataList() -> [ObjectDetectionData] {
@@ -285,28 +295,26 @@ extension CGRect {
 }
 
 class ObjectDetectionData {
-    let topLeft: CGPoint
-    let topRight: CGPoint
-    let bottomLeft: CGPoint
-    let bottomRight: CGPoint
+    let minX: Float
+    let maxX: Float
+    let minY: Float
+    let maxY: Float
     let type: String
-    
-    init(topLeft: CGPoint, topRight: CGPoint, bottomLeft: CGPoint, bottomRight: CGPoint, type: String) {
-        self.topLeft     = topLeft
-        self.topRight    = topRight
-        self.bottomLeft  = bottomLeft
-        self.bottomRight = bottomRight
-        self.type        = type
+
+    init(minX: Float, maxX: Float, minY: Float, maxY: Float, type: String) {
+        self.minX = minX
+        self.maxX = maxX
+        self.minY = minY
+        self.maxY = maxY
+        self.type = type
     }
-    
+
     var description: String {
         """
         ObjectDetectionData:
-          type:        \(type)
-          topLeft:     (\(String(format: "%.1f", topLeft.x)), \(String(format: "%.1f", topLeft.y)))
-          topRight:    (\(String(format: "%.1f", topRight.x)), \(String(format: "%.1f", topRight.y)))
-          bottomLeft:  (\(String(format: "%.1f", bottomLeft.x)), \(String(format: "%.1f", bottomLeft.y)))
-          bottomRight: (\(String(format: "%.1f", bottomRight.x)), \(String(format: "%.1f", bottomRight.y)))
+          type: \(type)
+          minX: \(minX), maxX: \(maxX)
+          minY: \(minY), maxY: \(maxY)
         """
     }
 }

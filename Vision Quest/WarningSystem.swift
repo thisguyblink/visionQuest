@@ -25,41 +25,58 @@ class WarningSystem : ObservableObject {
     
     @Published var spokenMessage: String = ""
     
+    var minRow = Int(0)
+    var maxRow = Int(100)
+    var minCol = Int(0)
+    var maxCol = Int(100)
+    
     init(lidarManager: DepthCameraManager) {
         self.lidarManager = lidarManager
         currentTime = CACurrentMediaTime()
     }
     
     func startWarningSystem() {
+        print("warning System started")
         running = true
         scheduleLoop()
+        screenSize = lidarManager.objectDetection.bufferSize
+        minRow = Int(screenSize.height) / 4
+        maxRow = Int(screenSize.height) * 3 / 4
+        minCol = Int(screenSize.width) / 4
+        maxCol = Int(screenSize.width) * 3 / 4
     }
     
     func stopWarningSystem() {
         running = false
     }
     
-    private func scheduleLoop() {
-            guard running else { return }
-            warningQueue.asyncAfter(deadline: .now() + 1.0 / Double(cyclesPerSecond)) { [weak self] in
-                    guard let self = self, self.running else { return }
-                    self.logicLoop()
-                    self.scheduleLoop()
-                }
+    private func scheduleLoop(delay: Double = 0.2) {
+        guard running else { return }
+
+        warningQueue.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self = self, self.running else { return }
+
+            let hasObjects = !self.lidarManager.objectDetection.getObjectDetectionDataList().isEmpty
+
+            self.logicLoop()
+
+            // slower loop if nothing detected
+            let nextDelay = hasObjects ? 0.1 : 0.3
+
+            self.scheduleLoop(delay: nextDelay)
         }
+    }
     
     private func logicLoop() {
-        screenSize = lidarManager.objectDetection.bufferSize // lidar --> object detection 
-        if screenSize == .zero {
-            fatalError("Screen size not recieved from Object Detection View Model")
-        }
-        let minRow = Int(screenSize.height) / 4
-        let maxRow = Int(screenSize.height) * 3 / 4
-        let minCol = Int(screenSize.width) / 4
-        let maxCol = Int(screenSize.width) * 3 / 4
-            if ( CACurrentMediaTime() - currentTime) >= 1/Double(cyclesPerSecond) {
+        print("logic Loop running")
+        let objects = lidarManager.objectDetection.getObjectDetectionDataList()
+        guard !objects.isEmpty else {
+                print("No objects yet")
+                return
+            }
+        guard screenSize != .zero else { return }
                 // lidar --> object detection
-                let objects = lidarManager.objectDetection.getObjectDetectionDataList() // dimensions grabbed in bufferSize
+                // dimensions grabbed in bufferSize
                 let lidarData = lidarManager.latestDepthGrid // dimesions 192H x 256 W
                 let scaledLidar = scaleLidarToScreen(grid: lidarData)
                 let depthValue = scaledLidar.values
@@ -67,25 +84,26 @@ class WarningSystem : ObservableObject {
                 var minDistance: Float = Float(5.0)
                 for object in objects {
                     // only check import object types
+                    print("Object type is \(object.type)")
                     if object.type == "hazard" || object.type == "object" {
-                        print("Hazard or Object Detected")
-                        var startRow = Int(object.topLeft.y)
-                        var endRow   = Int(object.bottomLeft.y)
-                        var startCol = Int(object.topLeft.x)
-                        var endCol   = Int(object.topRight.x)
-                        
-                        startRow = max(minRow, startRow)
-                        endRow   = min(maxRow, endRow)
-                        startCol = max(minCol, startCol)
-                        endCol   = min(maxCol, endCol)
-                        
-                        let rowRange = startRow...endRow
-                        let colRange = startCol...endCol
+                        let grid = lidarManager.latestDepthGrid
+                        var startRow = Int(object.minY * Float(grid.height))
+                        var endRow   = Int(object.maxY * Float(grid.height))
+                        var startCol = Int(object.minX * Float(grid.width))
+                        var endCol   = Int(object.maxX * Float(grid.width))
+                            // trying to bound objects to middle 50% but fails when both of the bounds are outside the image
+//                        startRow = max(48, startRow)
+//                        endRow   = min(144, endRow)
+//                        startCol = max(64, startCol)
+//                        endCol   = min(192, endCol)
                         
                         guard startRow < endRow, startCol < endCol else {
-                            print("DEBUG [logicLoop]: skipping object — invalid range")
+                            print("DEBUG [logicLoop]: skipping object — invalid range \(startRow), \(endRow), \(startCol), \(endCol), object: \(object.description)")
                             continue
                         }
+                        let rowRange = startRow...endRow
+                        let colRange = startCol...endCol
+                        print("Checking object \(object.type) box rows \(rowRange), cols \(colRange)")
                         
                         // start search for closest hazard
                         for row in rowRange {
@@ -101,6 +119,7 @@ class WarningSystem : ObservableObject {
                 }
                 // send warning to be spoken
                 if type != "None" {
+                    print("Sending Alert")
                     let grid = lidarManager.latestDepthGrid
                         DispatchQueue.global(qos: .background).async {
                             self.lidarManager.exportSnapshot(depthGrid: grid)
@@ -108,9 +127,6 @@ class WarningSystem : ObservableObject {
                     sendWarning(type: type, distance: minDistance)
                 }
                 
-            } else {
-                print("Processing time faster than cycle speed")
-            }
     }
     
     private func scaleLidarToScreen(grid: DepthGrid) -> DepthGrid {
@@ -141,7 +157,7 @@ class WarningSystem : ObservableObject {
     
     func sendWarning(type: String, distance: Float) {
         let now = CACurrentMediaTime()
-        let output = "\(type) in \(distance) meters"
+        let output = "\(type) in \(String(format: "%.2f", distance)) meters"
         
         guard output != lastSpokenMessage || (now - lastWarningTime) >= warningCooldown else {
             return
