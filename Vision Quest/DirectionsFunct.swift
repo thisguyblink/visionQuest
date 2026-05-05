@@ -10,9 +10,12 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var debugMessage: String = "Idle"
     @Published var selectedPlaceName: String = ""
     var hasHandledSpeechResult = false
+    @Published var currentInstruction: String = ""
+    private var lastSpokenInstruction: String = ""
+    
+    private let speech = SpeechFuncts()
 
     let locationManager = CLLocationManager()
-    let speech = SpeechFuncts()
 
     // get user long & lat
     var userLocation: CLLocationCoordinate2D?
@@ -82,7 +85,7 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
 
             let distance = userLoc.distance(from: stepLoc)
             // within 20 meters of the next step, load the next one
-            if distance < 20 { 
+            if distance < 20 {
                 if currentStepIx < navigationSteps.count - 1{
                     currentStepIx += 1
                     loadNextStep()
@@ -324,35 +327,76 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
         guard let url = URL(string: urlString) else { return }
 
         URLSession.shared.dataTask(with: url) { data, response, error in
-            if let data = data {
-                do {
-                    if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let routes = json["routes"] as? [[String: Any]],
-                       let firstRoute = routes.first,
-                       let legs = firstRoute["legs"] as? [[String: Any]],
-                       let firstLeg = legs.first,
-                       let steps = firstLeg["steps"] as? [[String: Any]] {
-                        
-                        DispatchQueue.main.async {
-                            self.navigationSteps = steps
-                            self.currentStepIx = 0
-                            self.speech.speak("Starting navigation to your destination.")
-                            self.loadNextStep()
-                        }
-                    }
-                } catch {
-                    print("JSON parsing error: \(error.localizedDescription)")
+            if let error = error {
+                DispatchQueue.main.async {
+                    self.debugMessage = "Directions network error: \(error.localizedDescription)"
                 }
-            } else if let error = error {
                 print("Network error: \(error.localizedDescription)")
+                return
+            }
+
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    self.debugMessage = "No data returned from Directions API"
+                }
+                return
+            }
+
+            do {
+                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let routes = json["routes"] as? [[String: Any]],
+                   let firstRoute = routes.first,
+                   let legs = firstRoute["legs"] as? [[String: Any]],
+                   let firstLeg = legs.first,
+                   let steps = firstLeg["steps"] as? [[String: Any]] {
+
+                    DispatchQueue.main.async {
+                        self.navigationSteps = steps
+                        self.currentStepIx = 0
+                        self.nextStepCoord = nil
+                        self.currentInstruction = ""
+                        self.lastSpokenInstruction = ""
+
+                        self.debugMessage = "Navigation started with \(steps.count) steps"
+
+                        self.onNavigationStart?()
+
+                        self.speech.speak("Starting navigation to your destination.")
+                        self.loadNextStep()
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self.debugMessage = "No route found"
+                        self.speech.speak("I could not find a route to that destination.")
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.debugMessage = "Directions JSON parsing error: \(error.localizedDescription)"
+                }
+                print("JSON parsing error: \(error.localizedDescription)")
             }
         }.resume()
+    }
+    
+    private func speakInstruction(_ instruction: String) {
+        let cleaned = instruction.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !cleaned.isEmpty else { return }
+        guard cleaned != lastSpokenInstruction else { return }
+
+        currentInstruction = cleaned
+        lastSpokenInstruction = cleaned
+
+        speech.speak(cleaned)
     }
 
     // MARK: Load Next Step for step by step navigation
     func loadNextStep() {
-        if currentStepIx >= navigationSteps.count {
+        guard currentStepIx < navigationSteps.count else {
+            currentInstruction = "You have arrived at your destination."
             speech.speak("You have arrived at your destination.")
+            onNavigationEnd?()
             return
         }
 
@@ -363,20 +407,41 @@ class DirectionsFuncts: NSObject, ObservableObject, CLLocationManagerDelegate {
             let lat = endLocation["lat"] as? CLLocationDegrees,
             let lng = endLocation["lng"] as? CLLocationDegrees,
             let userLoc = userLocation
-        else { return }
+        else {
+            debugMessage = "Could not load navigation step"
+            return
+        }
 
         nextStepCoord = CLLocationCoordinate2D(latitude: lat, longitude: lng)
-        
-        // need to strip html fields into plain text for speech output
-        if let instructions = step["html_instructions"] as? String {
-            let cleanInstructions = instructions.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
 
-            let userLocationObj = CLLocation(latitude: userLoc.latitude, longitude: userLoc.longitude)
-            let stepLocationObj = CLLocation(latitude: lat, longitude: lng)
-            let distanceMeters = userLocationObj.distance(from: stepLocationObj)
-            let distanceFeet = Int(distanceMeters * 3.28084)
-
-            speech.speak("\(cleanInstructions) in \(distanceFeet) feet.")
+        guard let htmlInstructions = step["html_instructions"] as? String else {
+            debugMessage = "Missing step instructions"
+            return
         }
+
+        let cleanInstructions = htmlInstructions
+            .replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+            .replacingOccurrences(of: "&amp;", with: "and")
+
+        let userLocationObj = CLLocation(
+            latitude: userLoc.latitude,
+            longitude: userLoc.longitude
+        )
+        
+        let stepLocationObj = CLLocation(
+            latitude: lat,
+            longitude: lng
+        )
+
+        let distanceMeters = userLocationObj.distance(from: stepLocationObj)
+        let distanceFeet = Int(distanceMeters * 3.28084)
+
+        let spokenText = "\(cleanInstructions) in \(distanceFeet) feet."
+
+        debugMessage = "Step \(currentStepIx + 1) of \(navigationSteps.count): \(spokenText)"
+
+        speakInstruction(spokenText)
     }
+
 }
