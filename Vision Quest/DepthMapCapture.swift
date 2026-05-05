@@ -54,7 +54,7 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         frameCount += 1 
-        guard frameCount % 5 == 0 else { return }
+        guard frameCount % 20 == 0 else { return }
         isProcessingFrame = true
         let startTime = CACurrentMediaTime()
         let colorBuffer    = frame.capturedImage

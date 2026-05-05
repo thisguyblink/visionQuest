@@ -81,16 +81,16 @@ class WarningSystem : ObservableObject {
                 let scaledLidar = scaleLidarToScreen(grid: lidarData)
                 let depthValue = scaledLidar.values
                 var type: String = "None"
-                var minDistance: Float = Float(5.0)
-                for object in objects {
+                var minDistance: Float = Float(4.0)
+                objectLoop: for object in objects {
                     // only check import object types
                     print("Object type is \(object.type)")
                     if object.type == "hazard" || object.type == "object" {
                         let grid = lidarManager.latestDepthGrid
-                        var startRow = Int(object.minY * Float(grid.height))
-                        var endRow   = Int(object.maxY * Float(grid.height))
-                        var startCol = Int(object.minX * Float(grid.width))
-                        var endCol   = Int(object.maxX * Float(grid.width))
+                        let startRow = Int(object.minY * Float(grid.height))
+                        let endRow   = Int(object.maxY * Float(grid.height))
+                        let startCol = Int(object.minX * Float(grid.width))
+                        let endCol   = Int(object.maxX * Float(grid.width))
                             // trying to bound objects to middle 50% but fails when both of the bounds are outside the image
 //                        startRow = max(48, startRow)
 //                        endRow   = min(144, endRow)
@@ -112,20 +112,29 @@ class WarningSystem : ObservableObject {
                                 if depth > Float(0.1) && depth < minDistance {  // skip -1 sentinel values
                                         minDistance = depth
                                         type = object.type
+                                        if minDistance <= warningDistance {
+                                            break objectLoop
+                                        }
                                     }
                                 }
+                            
                             }
+                        print("Minimum object distance: \(minDistance)")
+                        if minDistance != Float(4.0) {
+                            break objectLoop
+                        }
                     }
                 }
+            
                 // send warning to be spoken
-                if type != "None" {
-                    print("Sending Alert")
-                    let grid = lidarManager.latestDepthGrid
-                        DispatchQueue.global(qos: .background).async {
-                            self.lidarManager.exportSnapshot(depthGrid: grid)
-                        }
-                    sendWarning(type: type, distance: minDistance)
+            if type != "None" {
+                sendWarning(type: type, distance: minDistance)
+                let grid = lidarManager.latestDepthGrid
+                DispatchQueue.global(qos: .background).async {
+                    self.lidarManager.exportSnapshot(depthGrid: grid)
                 }
+            }
+        minDistance = Float(3.0)
                 
     }
     
