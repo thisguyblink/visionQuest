@@ -1,6 +1,8 @@
 import Foundation
 import ARKit
 import SwiftUI
+import UIKit
+import Photos
 
 
 struct DepthGrid {          // <-- top level, NOT inside any class
@@ -13,15 +15,28 @@ struct DepthGrid {          // <-- top level, NOT inside any class
 
 class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
     
-    let session = ARSession()
+        let session = ARSession()
+        lazy var objectDetection = ObjectDetectionViewModel(session: session, visual: false)
+        private var frameCount = 0
+        private var totalProcessingTime: Double = 0
         
-        @Published var latestDepthGrid: DepthGrid?
+        @Published var latestDepthGrid: DepthGrid
         @Published var isRunning = false
+    
         
-        override init() {
-            super.init()
-            session.delegate = self
-        }
+        private var isProcessingFrame: Bool = false
+        private let processingQueue = DispatchQueue(label: "depth.processing", qos: .userInitiated)
+    
+        private(set) var latestColorBuffer: CVPixelBuffer?
+        
+        
+    override init() {
+        self.latestDepthGrid = DepthGrid(values: [], width: 0, height: 0, maxDepth: 0, minDepth: 0)
+        super.init()
+        session.delegate = self
+        self.latestDepthGrid = buildMockGrid()  // replace with mock after init
+
+    }
     
     func start() {
         guard ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) else {
@@ -33,18 +48,46 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
         config.frameSemantics = .sceneDepth
         session.run(config)
         isRunning = true
+    
     }
+       
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        print("📸 Frame received")  // add this
-        guard let depth = frame.smoothedSceneDepth ?? frame.sceneDepth else {
-            print("❌ No depth data in frame")
-            return
-        }
-        print("✅ Depth data found")
-        let grid = buildGrid(from: depth.depthMap, confidence: depth.confidenceMap)
-        DispatchQueue.main.async {
-            self.latestDepthGrid = grid
+        frameCount += 1 
+        guard frameCount % 20 == 0 else { return }
+        isProcessingFrame = true
+        let startTime = CACurrentMediaTime()
+        let colorBuffer    = frame.capturedImage
+        latestColorBuffer = colorBuffer
+        let depthMap       = (frame.smoothedSceneDepth ?? frame.sceneDepth)?.depthMap
+        let confidenceMap  = (frame.smoothedSceneDepth ?? frame.sceneDepth)?.confidenceMap
+        guard depthMap != nil else {
+                print("❌ No depth map in frame \(frameCount)")
+                isProcessingFrame = false
+                return
+            }
+        processingQueue.async { [weak self] in
+            guard let self = self else { return }
+
+            // Run object detection on color frame
+            self.objectDetection.runVisionRequest(on: colorBuffer)
+
+            // Build depth grid if available
+            if let depthMap = depthMap {
+                let grid = self.buildGrid(from: depthMap, confidence: confidenceMap)
+                DispatchQueue.main.async {
+                    self.latestDepthGrid = grid
+                }
+            }
+            let elapsed = CACurrentMediaTime() - startTime
+                    self.totalProcessingTime += elapsed
+                    let average = self.totalProcessingTime / Double(self.frameCount)
+
+                    print(String(format: "⏱ Frame %d: %.1fms | avg: %.1fms",
+                                 self.frameCount,
+                                 elapsed * 1000,
+                                 average * 1000))
+            self.isProcessingFrame = false
         }
     }
     
@@ -115,13 +158,22 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
                     grid[row][col] = depthPointer[index]
                 }
             }
-            
-            return DepthGrid(values: grid, width: width, height: height, maxDepth: MaxDepth, minDepth: MinDepth)
+        
+        var rotated = Array(repeating: Array(repeating: Float(0), count: height), count: width)
+           for row in 0..<height {
+               for col in 0..<width {
+                   rotated[col][height - 1 - row] = grid[row][col]
+               }
+           }
+        
+            // need to flip height and width since the data shape is orginally landscape and needs to be vertical to match the input
+            return DepthGrid(values: rotated, width: height, height: width, maxDepth: MaxDepth, minDepth: MinDepth)
         }
+
     
     func buildMockGrid() -> DepthGrid {
-        let width = 256
-        let height = 192
+        let width = 192
+        let height = 256
         var grid = Array(repeating: Array(repeating: Float(0), count: width), count: height)
         
         var maxDepth: Float = 0
@@ -147,6 +199,77 @@ class DepthCameraManager: NSObject, ARSessionDelegate, ObservableObject  {
         
         return DepthGrid(values: grid, width: width, height: height,
                          maxDepth: maxDepth, minDepth: minDepth)
+    }
+    
+    func exportSnapshot(depthGrid: DepthGrid) {
+        guard let colorBuffer = latestColorBuffer else {
+            print("❌ No color frame available")
+            return
+        }
+        
+        // Convert color buffer to UIImage
+        let ciImage = CIImage(cvPixelBuffer: colorBuffer)
+        let context = CIContext()
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+            print("❌ Could not create CGImage")
+            return
+        }
+        let colorImage = UIImage(cgImage: cgImage, scale: 1.0, orientation: .right)
+        
+        // Convert depth grid to UIImage
+        let depthImage = renderDepthGrid(depthGrid)
+        
+        // Save both to photo library
+        PHPhotoLibrary.requestAuthorization { status in
+            guard status == .authorized else {
+                print("❌ Photo library access denied")
+                return
+            }
+            PHPhotoLibrary.shared().performChanges {
+                PHAssetChangeRequest.creationRequestForAsset(from: colorImage)
+                PHAssetChangeRequest.creationRequestForAsset(from: depthImage)
+            } completionHandler: { success, error in
+                if success {
+                    print("✅ Exported color + depth images")
+                } else if let error = error {
+                    print("❌ Export error: \(error)")
+                }
+            }
+        }
+    }
+
+    private func renderDepthGrid(_ grid: DepthGrid) -> UIImage {
+        let width  = grid.width
+        let height = grid.height
+        let size   = CGSize(width: width, height: height)
+        
+        UIGraphicsBeginImageContextWithOptions(size, false, 1.0)
+        guard let ctx = UIGraphicsGetCurrentContext() else {
+            UIGraphicsEndImageContext()
+            return UIImage()
+        }
+        
+        for row in 0..<height {
+            for col in 0..<width {
+                let val = grid.values[row][col]
+                let color: UIColor
+                if val == -1 {
+                    color = .gray
+                } else {
+                    let normalized = min(max(CGFloat(val / grid.maxDepth), 0.0), 1.0)
+                    color = UIColor(hue: (1.0 - normalized) * 0.66,
+                                    saturation: 0.9,
+                                    brightness: 0.9,
+                                    alpha: 1.0)
+                }
+                ctx.setFillColor(color.cgColor)
+                ctx.fill(CGRect(x: col, y: row, width: 1, height: 1))
+            }
+        }
+        
+        let image = UIGraphicsGetImageFromCurrentImageContext() ?? UIImage()
+        UIGraphicsEndImageContext()
+        return image
     }
         
 }
