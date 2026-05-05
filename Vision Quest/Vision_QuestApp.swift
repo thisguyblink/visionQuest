@@ -11,6 +11,7 @@ import GoogleMaps
 
 @main
 struct Vision_QuestApp: App {
+    @StateObject private var lidarManager = DepthCameraManager()
     init() {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "GOOGLE_API_KEY") as? String,
               !key.isEmpty,
@@ -35,7 +36,11 @@ struct Vision_QuestApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView().environmentObject(lidarManager)
+                .onAppear {
+                    lidarManager.start()
+                }
+                
         }
         .modelContainer(sharedModelContainer)
     }

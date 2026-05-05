@@ -12,11 +12,13 @@ enum AppPage {
     case depthMap
     case objectDetection
     case directions
+    case warningSystem
 }
 
 struct ContentView: View {
     @State private var currentPage: AppPage = .home
     @StateObject private var dirFunc = DirectionsFuncts()
+    @EnvironmentObject var lidarManager : DepthCameraManager
 
     var body: some View {
         
@@ -42,12 +44,15 @@ struct ContentView: View {
         case .home:
             HomeView()
         case .depthMap:
-            Depth_Map()
+            WarningSystemView(lidarManager: lidarManager)
         case .objectDetection:
-            Object_Detection()
+            WarningSystemView(lidarManager: lidarManager)
         case .directions:
             Directions(dirFunc: dirFunc, currentPage: $currentPage)
+        case .warningSystem:
+            WarningSystemView(lidarManager: lidarManager)
         }
+        
     }
 
     private func handleSwipe(_ value: DragGesture.Value) {

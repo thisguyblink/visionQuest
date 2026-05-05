@@ -29,6 +29,7 @@ class SpeechFuncts: NSObject, ObservableObject{
     func speak(_ text: String) {
         let utterance = AVSpeechUtterance(string: text)
         utterance.rate = 0.5
+        utterance.volume = 1.0 
         speechSynthesizer.speak(utterance)
     }
 

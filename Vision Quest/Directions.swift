@@ -120,7 +120,7 @@ struct Directions: View {
 
                 swipeActionButton(icon: "checkmark", label: "Yes", color: .green) {
                     dirFunc.userResponse("yes")   // starts navigation + audio
-                    self.currentPage = .depthMap        // switch to camera view immediately
+                    self.currentPage = .warningSystem        // switch to camera view immediately
                 }
             }
 

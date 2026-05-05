@@ -13,52 +13,59 @@ struct WarningSystemView: View {
     @StateObject private var warningSystem: WarningSystem
     
     init(lidarManager: DepthCameraManager) {
-            _warningSystem = StateObject(wrappedValue: WarningSystem(lidarManager: lidarManager))
+        _warningSystem = StateObject(wrappedValue: WarningSystem(lidarManager: lidarManager))
     }
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Vision Quest - Warning System")
-                .font(.title2)
-
-            Button(action: {
-                if !warningSystem.running {
-                    warningSystem.startWarningSystem()
-                    print("warning system has started")
-                } else {
-                    warningSystem.stopWarningSystem()
-                }
-            }) {
-                Text(warningSystem.running ? "Stop Warning" : "Start Warning")
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(warningSystem.running ? Color.red : Color.green)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-            }
-            .padding(.horizontal)
-
-            if warningSystem.running {
-                Text("Warning System is running...")
-                    .foregroundColor(.blue)
+        Button(action: {
+            if !warningSystem.running {
+                warningSystem.startWarningSystem()
             } else {
-                Text("Warning System is stopped.")
-                    .foregroundColor(.gray)
+                warningSystem.stopWarningSystem()
             }
+        }) {
+            ZStack {
+                (warningSystem.running ? Color.black : Color.green)
+                    .ignoresSafeArea()
 
-            if !warningSystem.spokenMessage.isEmpty {
-                Text(warningSystem.spokenMessage)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.yellow)
-                    .foregroundColor(.black)
-                    .cornerRadius(10)
-                    .opacity(0.8)
+                VStack(spacing: 20) {
+                    Spacer()
+
+                    Image(systemName: warningSystem.running ? "ear.fill" : "ear.slash.fill")
+                        .font(.system(size: 80))
+                        .foregroundColor(warningSystem.running ? .green : .white)
+
+                    Text(warningSystem.running ? "Warning System Active" : "Tap to Start")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+
+                    if !warningSystem.spokenMessage.isEmpty {
+                        Text(warningSystem.spokenMessage)
+                            .font(.headline)
+                            .multilineTextAlignment(.center)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.yellow)
+                            .foregroundColor(.black)
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                    }
+
+                    Spacer()
+
+                    if warningSystem.running {
+                        Text("Tap anywhere to stop")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                            .padding(.bottom, 40)
+                    }
+                }
             }
-
-            Spacer()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding()
+        .buttonStyle(.plain)
+        .ignoresSafeArea()
         .onDisappear {
             warningSystem.stopWarningSystem()
         }
